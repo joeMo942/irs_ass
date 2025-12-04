@@ -89,7 +89,7 @@ print("\nTotal ratings per group (sorted):")
 print(sorted_group_ratings)
 sorted_group_ratings.to_csv(os.path.join(RESULTS_DIR, 'group_ratings_sorted.csv'), header=True)
 
-# Plot distribution
+# 10.Plot distribution of ratings per group (sorted)
 plt.figure(figsize=(10, 6))
 sorted_group_ratings.plot(kind='bar')
 plt.xlabel('Groups (sorted by total ratings)')
@@ -99,6 +99,18 @@ plt.grid(axis='y')
 plt.savefig(os.path.join(RESULTS_DIR, 'ratings_per_group.png'))
 plt.close()
 print("Plot saved to results/ratings_per_group.png")
+
+# plotting original groupings before sorting 
+# note : they will be the same as sorted as we have sorted thae groups already
+plt.figure(figsize=(10, 6))
+group_ratings.plot(kind='bar')
+plt.xlabel('Groups (unsorted)')
+plt.ylabel('Total Number of Ratings')
+plt.title('Distribution of Ratings per Group (unsorted)')
+plt.grid(axis='y')
+plt.savefig(os.path.join(RESULTS_DIR, 'ratings_per_group_unsorted.png'))
+plt.close()
+print("Plot saved to results/ratings_per_group_unsorted.png")
 
 # 11. Select three target users
 # U1 with <= 2% ratings

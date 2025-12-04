@@ -7,6 +7,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATASET_PATH = os.path.join(PROJECT_ROOT, 'dataset', 'Dianping_SocialRec_2015', 'preprocessed_data.csv')
 TARGET_USERS_PATH = os.path.join(PROJECT_ROOT, 'results', 'target_users.txt')
 TARGET_ITEMS_PATH = os.path.join(PROJECT_ROOT, 'results', 'target_items.txt')
+USER_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'r_u.csv')
+ITEM_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'r_i.csv')
 
 def get_preprocessed_dataset():
     """
@@ -48,3 +50,25 @@ def get_target_items():
         # Read lines, strip whitespace, and convert to int
         items = [int(line.strip()) for line in f if line.strip()]
     return items
+
+def get_user_avg_ratings():
+    """
+    Loads the user average ratings from CSV.
+    
+    Returns:
+        pd.DataFrame: DataFrame containing user and their average rating (r_u_bar).
+    """
+    if not os.path.exists(USER_AVG_RATINGS_PATH):
+        raise FileNotFoundError(f"User average ratings file not found at {USER_AVG_RATINGS_PATH}")
+    return pd.read_csv(USER_AVG_RATINGS_PATH)
+
+def get_item_avg_ratings():
+    """
+    Loads the item average ratings from CSV.
+    
+    Returns:
+        pd.DataFrame: DataFrame containing item and their average rating (r_i_bar).
+    """
+    if not os.path.exists(ITEM_AVG_RATINGS_PATH):
+        raise FileNotFoundError(f"Item average ratings file not found at {ITEM_AVG_RATINGS_PATH}")
+    return pd.read_csv(ITEM_AVG_RATINGS_PATH)

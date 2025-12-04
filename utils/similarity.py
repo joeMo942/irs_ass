@@ -21,7 +21,7 @@ def calculate_user_raw_cosine(user1_ratings, user2_ratings):
     sum_sq_u1 = sum(r**2 for r in user1_ratings.values())
     sum_sq_u2 = sum(r**2 for r in user2_ratings.values())
     
-    denominator = math.sqrt(sum_sq_u1) * math.sqrt(sum_sq_u2)
+    denominator = (sum_sq_u1)**0.5 * (sum_sq_u2)**0.5
     
     if denominator == 0:
         return 0.0
@@ -54,7 +54,7 @@ def calculate_user_mean_centered_cosine(user1_ratings, user2_ratings, user1_mean
     sum_sq_u1 = sum((r - user1_mean)**2 for r in user1_ratings.values())
     sum_sq_u2 = sum((r - user2_mean)**2 for r in user2_ratings.values())
     
-    denominator = math.sqrt(sum_sq_u1) * math.sqrt(sum_sq_u2)
+    denominator = (sum_sq_u1)**0.5 * (sum_sq_u2)**0.5
     
     if denominator == 0:
         return 0.0
@@ -90,28 +90,53 @@ def calculate_user_pearson(user1_ratings, user2_ratings):
     sum_sq_u1 = sum((r - mean_u1)**2 for r in u1_common_ratings)
     sum_sq_u2 = sum((r - mean_u2)**2 for r in u2_common_ratings)
     
-    denominator = math.sqrt(sum_sq_u1) * math.sqrt(sum_sq_u2)
+    denominator = (sum_sq_u1)**0.5 * (sum_sq_u2)**0.5
     
     if denominator == 0:
         return 0.0
         
     return numerator / denominator
 
-def calculate_item_mean_centered_cosine(item1_ratings, item2_ratings, item1_mean, item2_mean):
+def calculate_item_mean_centered_cosine(item1_ratings, item2_ratings, user_means):
     """
-    Calculates mean-centered cosine similarity between two items.
+    Calculates Adjusted Cosine Similarity between two items.
+    Subtracts the USER's average rating from each rating.
     
     Args:
         item1_ratings (dict): Dictionary of {user_id: rating} for item 1.
         item2_ratings (dict): Dictionary of {user_id: rating} for item 2.
-        item1_mean (float): Average rating of item 1.
-        item2_mean (float): Average rating of item 2.
+        user_means (dict): Dictionary of {user_id: mean_rating} for all users.
         
     Returns:
         float: Similarity score.
     """
-    # Logic is identical to user-based, just interpreting keys as users instead of items
-    return calculate_user_mean_centered_cosine(item1_ratings, item2_ratings, item1_mean, item2_mean)
+    common_users = set(item1_ratings.keys()) & set(item2_ratings.keys())
+    
+    if not common_users:
+        return 0.0
+        
+    numerator = 0.0
+    sum_sq_i1 = 0.0
+    sum_sq_i2 = 0.0
+    
+    for user in common_users:
+        if user not in user_means:
+            continue
+            
+        user_mean = user_means[user]
+        r1_adj = item1_ratings[user] - user_mean
+        r2_adj = item2_ratings[user] - user_mean
+        
+        numerator += r1_adj * r2_adj
+        sum_sq_i1 += r1_adj**2
+        sum_sq_i2 += r2_adj**2
+        
+    denominator = (sum_sq_i1)**0.5 * (sum_sq_i2)**0.5
+    
+    if denominator == 0:
+        return 0.0
+        
+    return numerator / denominator
 
 def calculate_item_pearson(item1_ratings, item2_ratings):
     """
@@ -151,20 +176,27 @@ def calculate_similarity_for_target_user(target_user_ratings, all_users_ratings,
         if target_user_id is not None and user_id == target_user_id:
             continue
             
-        # Prepare arguments for the similarity function
         try:
-            if similarity_func.__name__ == 'calculate_user_mean_centered_cosine' or similarity_func.__name__ == 'calculate_item_mean_centered_cosine':
-                 if target_mean is not None and user_means:
+            # Check if the function requires means (Adjusted Cosine / Mean Centered)
+            if similarity_func.__name__ in ['calculate_user_mean_centered_cosine', 'calculate_item_mean_centered_cosine']:
+                 if target_mean is not None and user_means and user_id in user_means:
                      score = similarity_func(target_user_ratings, other_user_ratings, target_mean, user_means[user_id])
+                 elif similarity_func.__name__ == 'calculate_item_mean_centered_cosine' and user_means:
+                     # Item-based adjusted cosine takes (item1, item2, user_means)
+                     # But here we are iterating users? 
+                     # Wait, calculate_similarity_for_target_user is designed for USERS.
+                     # If we are using it for ITEMS, the "all_users_ratings" would actually be "all_items_ratings".
+                     # And "user_means" would be passed as is.
+                     # The signature of calculate_item_mean_centered_cosine is (item1, item2, user_means).
+                     # So we should pass user_means directly.
+                     score = similarity_func(target_user_ratings, other_user_ratings, user_means)
                  else:
-                     # Fallback or error if means not provided for mean-centered
-                     continue 
+                     continue
             else:
                 score = similarity_func(target_user_ratings, other_user_ratings)
                 
             similarities.append((user_id, score))
         except Exception:
-            # Ignore errors during calculation
             continue
             
     # Sort by similarity score descending

@@ -1,3 +1,8 @@
-dataset/Movies_and_TV.csv
+*.csv
 .vscode/
 venv/
+*.json
+results/*.png
+results/*.txt
+dataset/Dianping_SocialRec_2015
+*.pyc

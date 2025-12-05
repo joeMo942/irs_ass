@@ -35,22 +35,32 @@ def main():
     print("Loading user average ratings...")
     df = get_user_avg_ratings()
     
-    # 2. Create a 1-dimensional feature vector for each user
+    # ------------------------------------------------------------------------------------------------------------------
+    # 2. Create a 1-dimensional feature vector for each user u, consisting of their average rating r_u_bar.
+    # ------------------------------------------------------------------------------------------------------------------
     X = df[['r_u_bar']].values
     
-    # 3. Calculate mean
+    # ------------------------------------------------------------------------------------------------------------------
+    # 3. Calculate the mean (mu) of the feature values.
+    # ------------------------------------------------------------------------------------------------------------------
     mu = df['r_u_bar'].mean()
     print(f"Mean of users' average ratings (mu): {mu:.4f}")
     
-    # 4. Compute Standard Deviation
+    # ------------------------------------------------------------------------------------------------------------------
+    # 4. Compute the standard deviation (sigma) of the feature values.
+    # ------------------------------------------------------------------------------------------------------------------
     sigma = df['r_u_bar'].std()
     print(f"Standard deviation (sigma): {sigma:.4f}")
     
-    # 5. Normalize feature values
+    # ------------------------------------------------------------------------------------------------------------------
+    # 5. Normalize the feature values using Z-score standardization.
+    # ------------------------------------------------------------------------------------------------------------------
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # 6. Apply K-means with different K
+    # ------------------------------------------------------------------------------------------------------------------
+    # 6. Apply K-means clustering with the following values of K: 5, 10, 15, 20, 30, and 50.
+    # ------------------------------------------------------------------------------------------------------------------
     k_values = [5, 10, 15, 20, 30, 50]
     wcss = []
     silhouette_scores = []
@@ -60,10 +70,14 @@ def main():
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
         
-        # 7.2 WCSS
+        # --------------------------------------------------------------------------------------------------------------
+        # 6.1 Record the WCSS (inertia) for each K.
+        # --------------------------------------------------------------------------------------------------------------
         wcss.append(kmeans.inertia_)
         
-        # 7.4 Silhouette Score (Sampled for performance)
+        # --------------------------------------------------------------------------------------------------------------
+        # 6.2 Calculate the Silhouette Score for each clustering result.
+        # --------------------------------------------------------------------------------------------------------------
         # using a large sample of 40,000 to balance accuracy and speed
         #eldata kbera lazem na5od sample 
         if len(X_scaled) > 1000:
@@ -74,7 +88,9 @@ def main():
         
         print(f"  K={k}: WCSS={kmeans.inertia_:.4f}, Silhouette={score:.4f}")
 
-    # 7.3 Plot Elbow Curve and Silhouette
+    # ------------------------------------------------------------------------------------------------------------------
+    # 7. Plot the Elbow Curve (WCSS vs K) and Silhouette Score vs K.
+    # ------------------------------------------------------------------------------------------------------------------
     results_dir = os.path.join(project_root, 'results')
     os.makedirs(results_dir, exist_ok=True)
     
@@ -98,7 +114,9 @@ def main():
     plt.savefig(plot_path)
     print(f"\nPlots saved to {plot_path}")
 
-    # 8. Optimal K selection (Heuristic: Max Silhouette Score)
+    # ------------------------------------------------------------------------------------------------------------------
+    # 8. Determine the optimal K based on the plots (e.g., using the Elbow Method or max Silhouette Score).
+    # ------------------------------------------------------------------------------------------------------------------
     # optimal k manually selected based on elbow method plot
     optimal_k = 10
     print(f"\nOptimal K manually selected based on elbow method plot: {optimal_k}")
@@ -111,7 +129,10 @@ def main():
     # Inverse transform centroids to get original rating scale
     centroids_original = scaler.inverse_transform(centroids_scaled).flatten()
     
-    # 8.1 Distribution of users
+    # ------------------------------------------------------------------------------------------------------------------
+    # 9. Perform detailed analysis on the clusters formed with the optimal K.
+    # 9.1 Visualize the distribution of users across clusters.
+    # ------------------------------------------------------------------------------------------------------------------
     cluster_counts = df['cluster'].value_counts().sort_index()
     print("\nUser distribution per cluster:")
     print(cluster_counts)
@@ -126,7 +147,10 @@ def main():
     plt.savefig(dist_plot_path)
     print(f"Distribution plot saved to {dist_plot_path}")
 
-    # 8.2 & 8.3 Analyze Centroids
+    # ------------------------------------------------------------------------------------------------------------------
+    # 9.2 Calculate the centroid (average rating) for each cluster.
+    # 9.3 Interpret the nature of each cluster (e.g., "Generous" or "Strict" raters).
+    # ------------------------------------------------------------------------------------------------------------------
     print("\nCluster Centroids (Average Ratings) and Interpretation:")
     cluster_info = []
     for cluster_id in range(optimal_k):
@@ -285,7 +309,11 @@ def main():
     # Part 4: Comparison & Efficiency Analysis
     # =========================================================
     print("\n" + "="*50)
-    print("Comparison of Clustering-Based vs Baseline CF")
+    # =========================================================
+    # 10. Compare clustering-based predictions with non-clustering predictions from Section TWO
+    # =========================================================
+    print("\n" + "="*50)
+    print("10. Comparison of Clustering-Based vs Baseline CF")
     print("="*50)
     
     print(f"{'User':<10} | {'Item':<10} | {'Cluster Pred':<15} | {'Baseline Pred':<15} | {'Diff':<10}")
@@ -316,7 +344,14 @@ def main():
     print(f"\nComparison results saved to {comparison_file_path}")
 
     print("\n" + "="*50)
-    print("Efficiency Analysis (Computed)")
+    # =========================================================
+    # 11. Compare computational efficiency
+    # ------------------------------------------------------------------------------------------------------------------
+    # 11.1 Calculate the theoretical speedup factor
+    # 11.2 Express the efficiency gain as a percentage reduction
+    # =========================================================
+    print("\n" + "="*50)
+    print("11. Efficiency Analysis (Computations)")
     print("="*50)
     
     comps_no_clustering = total_similarity_computations_baseline
@@ -335,7 +370,12 @@ def main():
     # Part 5: Evaluate Impact of Cluster Imbalance
     # =========================================================
     print("\n" + "="*50)
-    print("Part 5: Cluster Imbalance Evaluation")
+    # =========================================================
+    # 12. Evaluate the impact of cluster imbalance
+    # 12.1 Identify if any clusters are significantly larger or smaller
+    # =========================================================
+    print("\n" + "="*50)
+    print("12. Cluster Imbalance Evaluation")
     print("="*50)
     
     # cluster_counts is already calculated for optimal_k
@@ -366,7 +406,12 @@ def main():
     # Part 6: Test Robustness (Re-run K-means)
     # =========================================================
     print("\n" + "="*50)
-    print("Part 6: Robustness Test (Re-run K-means 3 times)")
+    # =========================================================
+    # 13. Test the robustness of the clustering approach
+    # 13.1 Re-run K-means with different random initializations (at least 3 times)
+    # =========================================================
+    print("\n" + "="*50)
+    print("13. Robustness Test (Re-run K-means 3 times)")
     print("="*50)
     
     seeds = [42, 100, 2023]

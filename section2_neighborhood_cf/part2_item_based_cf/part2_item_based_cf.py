@@ -27,8 +27,6 @@ def main():
     try:
         df = data_loader.get_preprocessed_dataset()
         target_items = data_loader.get_target_items()
-
-        pass 
     except Exception as e:
         print(f"Error loading data: {e}")
         return
@@ -65,11 +63,9 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 1] Calculating Similarities (Pearson)...")
     
-    # Store similarities: {target_item: {other_item: similarity}}
     target_similarities = {}
     
     for target_item in tqdm(target_items, desc="Target Items"):
-        # If target item not in dataset, skip
         if target_item not in item_user_ratings:
             print(f"Warning: Target item {target_item} not found in dataset.")
             continue
@@ -114,7 +110,6 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 3] Predicting Ratings (Similarity-Based)...")
 
-    # Define validation set: 100 unrated (50 per target item)
     print("Creating validation set (100 unrated items, 50 per target)...")
     validation_set = []
     actuals = []
@@ -122,12 +117,8 @@ def main():
     all_users_list = set(user_item_ratings.keys())
     
     for target_item in target_items:
-        # Get users who have rated the target item
         rated_users = set(item_user_ratings.get(target_item, {}).keys())
         
-        # Determine unrated users
-        # Note: all_users_list might contain users who have rate other items but not this one.
-        # This is strictly users from the dataset.
         unrated_users = list(all_users_list - rated_users)
         
         # Sample 50
@@ -147,8 +138,6 @@ def main():
     predictions_sim = []
     
     
-    # Perform predictions for Step 3
-
     # Perform predictions for Step 3
     for u, i, r in validation_set:
         neighbors = top_k_neighbors_sim.get(i, [])
@@ -173,16 +162,12 @@ def main():
         num_ratings_target = len(target_users)
         
         # Beta = 30% of number of ratings for the target item
-        # Ensure beta > 0 to avoid division by zero. If 0 ratings, beta=0.
         beta = 0.3 * num_ratings_target
         if beta == 0: beta = 1e-9 # Prevent div/0
         
         for other_item in all_items:
             if other_item == target_item:
-                ds_scores[other_item] = 1.0 # Self is typically max, or 0? Notebook used 0. Let's stick to valid logic.
-                # If we use it for weighting, 1.0 makes sense. Notebook said "ds_scores[other_item] = 0.0" for self.
-                # But self is excluded from neighbors anyway.
-                ds_scores[other_item] = 0.0
+                ds_scores[other_item] = 1.0
                 continue
                 
             other_users = set(item_user_ratings[other_item].keys())
@@ -240,7 +225,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 7] Comparison of Neighborhoods...")
     
-    sim_comp_path = os.path.join(project_root, 'results', 'similarity_comparison.txt')
+    sim_comp_path = os.path.join(project_root, 'results', 'case1_similarity_comparison.txt')
     with open(sim_comp_path, 'w') as f_sim:
         for target_item in target_items:
             if target_item not in top_k_neighbors_sim: continue
@@ -266,7 +251,6 @@ def main():
             top_sim = top_k_neighbors_sim.get(target_item, [])[:20]
             top_ds = top_k_neighbors_ds.get(target_item, [])[:20]
             
-            # Ensure we can iterate up to 20 even if lists are shorter
             max_len = max(len(top_sim), len(top_ds))
             
             for i in range(max_len):
@@ -298,7 +282,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 8 & 9] Final Discussion")
     
-    pred_comp_path = os.path.join(project_root, 'results', 'prediction_comparison.txt')
+    pred_comp_path = os.path.join(project_root, 'results', 'case1_prediction_comparison.txt')
     
     with open(pred_comp_path, 'w') as f_pred:
         header_title = "Comparison of Predictions (First 20 Samples):"
@@ -364,6 +348,12 @@ def main():
             col_headers = f"{'Rank':<5} | {'Sim-Item':<10} | {'Sim-Score':<10} | {'DS-Item':<10} | {'DS-Score':<10}"
             separator = "-" * 60
             
+            # Print to console
+            print(header)
+            print(col_headers)
+            print(separator)
+            
+            # Write to file
             f_sim.write(header + "\n")
             f_sim.write(col_headers + "\n")
             f_sim.write(separator + "\n")
@@ -383,7 +373,7 @@ def main():
                     item_d, score_d = top_ds[i]
                     d_str = f"{item_d:<10} | {score_d:<10.4f}"
                 else: d_str = f"{'-':<10} | {'-':<10}"
-                
+                print(f"{rank:<5} | {s_str} | {d_str}")
                 f_sim.write(f"{rank:<5} | {s_str} | {d_str}\n")
             f_sim.write("\n\n")
     print(f"Case 2 Similarity comparison saved to: {c2_sim_path}")

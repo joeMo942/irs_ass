@@ -110,7 +110,7 @@ def main():
 
     plt.title('Elbow Method and Silhouette Score per K')
     plt.grid(True)
-    plot_path = os.path.join(results_dir, 'clustering_metrics.png')
+    plot_path = os.path.join(results_dir, 'sec3_part1_clustering_metrics.png')
     plt.savefig(plot_path)
     print(f"\nPlots saved to {plot_path}")
 
@@ -143,7 +143,7 @@ def main():
     plt.title(f'User Distribution for K={optimal_k}')
     plt.xlabel('Cluster ID')
     plt.ylabel('Number of Users')
-    dist_plot_path = os.path.join(results_dir, f'user_distribution_k{optimal_k}.png')
+    dist_plot_path = os.path.join(results_dir, f'sec3_part1_user_distribution_k{optimal_k}.png')
     plt.savefig(dist_plot_path)
     print(f"Distribution plot saved to {dist_plot_path}")
 
@@ -333,7 +333,7 @@ def main():
             comparison_lines.append(line)
 
     # Save comparison to file
-    comparison_file_path = os.path.join(results_dir, 'comparison_results.txt')
+    comparison_file_path = os.path.join(results_dir, 'sec3_part1_comparison_results.txt')
     with open(comparison_file_path, 'w') as f:
         f.write("Comparison of Clustering-Based vs Baseline CF\n")
         f.write("="*75 + "\n")

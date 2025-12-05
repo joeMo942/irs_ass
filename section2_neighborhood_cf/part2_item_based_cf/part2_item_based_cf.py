@@ -26,25 +26,7 @@ def main():
     try:
         df = data_loader.get_preprocessed_dataset()
         target_items = data_loader.get_target_items()
-        # Ensure target_items are strings if they look like IDs but are stored as mixed types, 
-        # though data_loader seems to return ints? Let's check the data loader output.
-        # viewing data_loader.py: "items = [int(line.strip()) for line in f if line.strip()]"
-        # The dataset has '0001527665' as item IDs (strings/objects). 
-        # The data loader casts to int? 
-        # Wait, the dataset uses string IDs for items (ASINs usually).
-        # Let's double check data_loader.get_target_items.
-        # It converts to INT: "items = [int(line.strip()) for line in f if line.strip()]"
-        # BUT the dataset shown in the notebook has 'B00AP2DD48' which is a string.
-        # '0001527665' can be an int, but 'B00AP2DD48' cannot.
-        # This might be a bug in the provided data_loader if expected IDs are alphanumeric.
-        # I should probably trust the data loader or handle the exception if it fails.
-        # Given the previous context, 'target_items.txt' might contain integer IDs if the dataset was mapped.
-        # However, the notebook explicitly shows 'B00AP2DD48'. 
-        # Let's rely on what data_loader returns. If it fails, I'll fix it.
-        # Actually, let's verify if I should change data_loader. But I am supposed to use it.
-        # I will accept whatever data_loader returns.
-        
-        # Correction: I should check if the IDs in df are comparable to target_items.
+
         pass 
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -101,8 +83,6 @@ def main():
                 
             other_ratings = item_user_ratings[other_item]
             
-            # Use utils.similarity.calculate_item_pearson
-            # Returns 0.0 if not enough common items
             sim = similarity.calculate_item_pearson(target_ratings, other_ratings)
             
             if sim != 0:
@@ -133,18 +113,35 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 3] Predicting Ratings (Similarity-Based)...")
 
-    # Define validation set (random sample of 100)
-    print("Creating validation set (random 100 samples)...")
+    # Define validation set: 100 unrated (50 per target item)
+    print("Creating validation set (100 unrated items, 50 per target)...")
     validation_set = []
     actuals = []
     
-    # Sample 100 indices
-    sample_indices = np.random.choice(len(df), 100, replace=False)
-    for idx in sample_indices:
-        row = df.iloc[idx]
-        validation_set.append((row['user'], row['item'], row['rating']))
-        actuals.append(row['rating'])
+    all_users_list = set(user_item_ratings.keys())
+    
+    for target_item in target_items:
+        # Get users who have rated the target item
+        rated_users = set(item_user_ratings.get(target_item, {}).keys())
         
+        # Determine unrated users
+        # Note: all_users_list might contain users who have rate other items but not this one.
+        # This is strictly users from the dataset.
+        unrated_users = list(all_users_list - rated_users)
+        
+        # Sample 50
+        if len(unrated_users) >= 50:
+            sample_indices = np.random.choice(len(unrated_users), 50, replace=False)
+            for idx in sample_indices:
+                u = unrated_users[idx]
+                validation_set.append((u, target_item, np.nan))
+                actuals.append(np.nan)
+        else:
+            print(f"Warning: Not enough unrated users for item {target_item}. Taking all {len(unrated_users)}.")
+            for u in unrated_users:
+                validation_set.append((u, target_item, np.nan))
+                actuals.append(np.nan)
+
     actuals = np.array(actuals)
     predictions_sim = []
     
@@ -156,6 +153,8 @@ def main():
         
         numerator = 0.0
         denominator = 0.0
+        
+        user_ratings = user_item_ratings.get(user_id, {})
         
         if not user_ratings:
             return item_means_dict.get(item_id, 3.0)
@@ -264,7 +263,6 @@ def main():
                 
         sorted_items = sorted(weighted_sims.items(), key=lambda x: x[1], reverse=True)
         top_items = sorted_items[:top_k_percent]
-        # Filter zeros? The notebook filtered "if score > 0". 
         top_items = [(item, score) for item, score in top_items if score > 0]
         
         top_k_neighbors_ds[target_item] = top_items
@@ -290,42 +288,91 @@ def main():
     # -------------------------------------------------------------------------
     print("\n[Step 7] Comparison of Neighborhoods...")
     
-    for target_item in target_items:
-        if target_item not in top_k_neighbors_sim: continue
-        
-        set_sim = set([x[0] for x in top_k_neighbors_sim[target_item]])
-        set_ds = set([x[0] for x in top_k_neighbors_ds[target_item]])
-        
-        intersection = len(set_sim.intersection(set_ds))
-        union = len(set_sim.union(set_ds))
-        
-        jaccard = intersection / union if union > 0 else 0
-        overlap = (intersection / len(set_sim)) * 100 if len(set_sim) > 0 else 0
-        
-        print(f"Target {target_item}: Jaccard={jaccard:.4f}, Overlap={overlap:.2f}%")
-        
-        # Display top 10 items from both lists for visual comparison
-        print(f"  Top 10 Neighbors (Sim-Based):")
-        for i, (item, score) in enumerate(top_k_neighbors_sim[target_item][:10], 1):
-            print(f"    {i}. {item} (Sim: {score:.4f})")
+    sim_comp_path = os.path.join(project_root, 'results', 'similarity_comparison.txt')
+    with open(sim_comp_path, 'w') as f_sim:
+        for target_item in target_items:
+            if target_item not in top_k_neighbors_sim: continue
             
-        print(f"  Top 10 Neighbors (DS-Weighted):")
-        for i, (item, score) in enumerate(top_k_neighbors_ds[target_item][:10], 1):
-            print(f"    {i}. {item} (Score: {score:.4f})")
+            set_sim = set([x[0] for x in top_k_neighbors_sim[target_item]])
+            set_ds = set([x[0] for x in top_k_neighbors_ds[target_item]])
+            
+            header = f"Target {target_item}: Comparison of Top 20 Neighbors"
+            col_headers = f"{'Rank':<5} | {'Sim-Item':<10} | {'Sim-Score':<10} | {'DS-Item':<10} | {'DS-Score':<10}"
+            separator = "-" * 60
+            
+            # Print to console
+            print(header)
+            print(col_headers)
+            print(separator)
+            
+            # Write to file
+            f_sim.write(header + "\n")
+            f_sim.write(col_headers + "\n")
+            f_sim.write(separator + "\n")
+            
+            # Get top 20 for both
+            top_sim = top_k_neighbors_sim.get(target_item, [])[:20]
+            top_ds = top_k_neighbors_ds.get(target_item, [])[:20]
+            
+            # Ensure we can iterate up to 20 even if lists are shorter
+            max_len = max(len(top_sim), len(top_ds))
+            
+            for i in range(max_len):
+                rank = i + 1
+                
+                if i < len(top_sim):
+                    item_s, score_s = top_sim[i]
+                    s_str = f"{item_s:<10} | {score_s:<10.4f}"
+                else:
+                    s_str = f"{'-':<10} | {'-':<10}"
+                    
+                if i < len(top_ds):
+                    item_d, score_d = top_ds[i]
+                    d_str = f"{item_d:<10} | {score_d:<10.4f}"
+                else:
+                    d_str = f"{'-':<10} | {'-':<10}"
+                    
+                row_str = f"{rank:<5} | {s_str} | {d_str}"
+                print(row_str)
+                f_sim.write(row_str + "\n")
+            
+            print("\n")
+            f_sim.write("\n\n")
+            
+    print(f"Similarity comparison saved to: {sim_comp_path}")
         
     # -------------------------------------------------------------------------
     # 9. Step 8 & 9: Final Commentary
     # -------------------------------------------------------------------------
     print("\n[Step 8 & 9] Final Discussion")
-    print(f"\nComparison of Predictions (First 20 Samples):")
-    print(f"{'User':<15} | {'Item':<12} | {'Actual':<6} | {'Sim-Pred':<8} | {'DS-Pred':<8}")
-    print("-" * 65)
     
-    for k in range(min(20, len(actuals))):
-        u, i, r = validation_set[k]
-        p_sim = predictions_sim[k]
-        p_ds = predictions_ds[k]
-        print(f"{u:<15} | {i:<12} | {r:<6.1f} | {p_sim:<8.2f} | {p_ds:<8.2f}")
+    pred_comp_path = os.path.join(project_root, 'results', 'prediction_comparison.txt')
+    
+    with open(pred_comp_path, 'w') as f_pred:
+        header_title = "Comparison of Predictions (First 20 Samples):"
+        col_headers = f"{'User':<15} | {'Item':<12} | {'Sim-Pred':<8} | {'DS-Pred':<8}"
+        separator = "-" * 55
+        
+        # Print
+        print(f"\n{header_title}")
+        print(col_headers)
+        print(separator)
+        
+        # Write
+        f_pred.write(header_title + "\n")
+        f_pred.write(col_headers + "\n")
+        f_pred.write(separator + "\n")
+        
+        for k in range(min(20, len(actuals))):
+            u, i, r = validation_set[k]
+            p_sim = predictions_sim[k]
+            p_ds = predictions_ds[k]
+            
+            row_str = f"{u:<15} | {i:<12} | {p_sim:<8.2f} | {p_ds:<8.2f}"
+            print(row_str)
+            f_pred.write(row_str + "\n")
+            
+    print(f"Prediction comparison saved to: {pred_comp_path}")
 
 if __name__ == "__main__":
     main()

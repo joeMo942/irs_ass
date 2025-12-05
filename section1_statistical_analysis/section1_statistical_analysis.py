@@ -25,6 +25,26 @@ df = df[df['rating'] != 0]
 df.to_csv(os.path.join(DATASET_SAVE_PATH, 'preprocessed_data.csv'), index=False)
 
 
+# 2. Verify that all ratings are within the 1-5 scale
+# Check unique rating values
+unique_ratings = df['rating'].unique()
+print(f"\nUnique rating values found: {sorted(unique_ratings)}")
+
+# Check min and max ratings
+min_rating = df['rating'].min()
+max_rating = df['rating'].max()
+print(f"\nMinimum rating: {min_rating}")
+print(f"Maximum rating: {max_rating}")
+
+# Check if all ratings are within 1-5 range
+valid_ratings = df['rating'].between(1, 5, inclusive='both')
+num_valid = valid_ratings.sum()
+num_invalid = (~valid_ratings).sum()
+
+print(f"\nTotal ratings: {len(df)}")
+print(f"Valid ratings (1-5): {num_valid}")
+print(f"Invalid ratings (outside 1-5): {num_invalid}")
+
 # 3. Calculate number of ratings for each user (n_u)
 user_counts = df.groupby('user')['rating'].count().rename('n_u')
 user_counts.to_csv(os.path.join(RESULTS_DIR, 'n_u.csv'), header=True)
@@ -44,6 +64,7 @@ item_means.to_csv(os.path.join(RESULTS_DIR, 'r_i.csv'), header=True)
 # 7. Ascendingly order the total number of ratings per item and plot the distribution per item.
 sorted_item_counts = item_counts.sort_values(ascending=True)
 # Correct (Ascending)
+print(sorted_item_counts)
 
 plt.figure(figsize=(10, 6))
 # Reset index to get a range for x-axis (0 to n_items) representing the items

@@ -216,6 +216,12 @@ def main():
 
     print(f"\n{'User':<10} | {'Item':<10} | {'Actual':<6} | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}")
     print("-" * 80)
+    
+    # Save to file
+    output_file_path = os.path.join(RESULTS_DIR, 'sec3_part3_prediction_comparison.txt')
+    with open(output_file_path, 'w') as f:
+        f.write(f"{'User':<10} | {'Item':<10} | {'Actual':<6} | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}\n")
+        f.write("-" * 80 + "\n")
 
     mae_base_list = []
     mae_clus_list = []
@@ -282,15 +288,6 @@ def main():
             clus_pred = predict_item_based(u, i, top_neighbors_clus, user_item_ratings, user_means, item_means)
 
             # --- Result ---
-
-            # 8.2 Calculate prediction error
-            # Actual rating: if missing, use user's average
-            actual_rating = t_item_ratings.get(u)
-            if actual_rating is None:
-                actual_rating = user_means.get(u, 3.0) # Fallback to 3.0 if user mean missing
-            
-            err_base = abs(actual_rating - base_pred)
-            err_clus = abs(actual_rating - clus_pred)
             # Task 8.2: Calculate prediction error
             # Actual rating: if missing, use user's average
             actual_rating = t_item_ratings.get(u)
@@ -303,28 +300,41 @@ def main():
             mae_base_list.append(err_base)
             mae_clus_list.append(err_clus)
 
-            print(f"{u:<10} | {i:<10} | {actual_rating:<6.2f} | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}")
+            line = f"{u:<10} | {i:<10} | {actual_rating:<6.2f} | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}"
+            print(line)
+            with open(output_file_path, 'a') as f:
+                f.write(line + "\n")
 
             # --- Task 11 Collection (Cluster Size) ---
             if i_cluster is not None:
                 cluster_errors[i_cluster].append(err_clus)
 
+
     # Task 8.3 Comparison Summary
     avg_mae_base = np.mean(mae_base_list) if mae_base_list else 0
     avg_mae_clus = np.mean(mae_clus_list) if mae_clus_list else 0
     
-    print("\n" + "="*50)
-    print("SECTION 8.2 & 8.3: PREDICTION ERROR ANALYSIS")
-    print("="*50)
-    print(f"Overall MAE (Baseline - Global):   {avg_mae_base:.4f}")
-    print(f"Overall MAE (Clustering - Local):  {avg_mae_clus:.4f}")
-    print("-" * 50)
+    # Use explicit concatenation to avoid repetition bug
+    separator = "=" * 50
+    dash_line = "-" * 50
+    
+    summary = "\n" + separator + "\n"
+    summary += "SECTION 8.2 & 8.3: PREDICTION ERROR ANALYSIS\n"
+    summary += separator + "\n"
+    summary += f"Overall MAE (Baseline - Global):   {avg_mae_base:.4f}\n"
+    summary += f"Overall MAE (Clustering - Local):  {avg_mae_clus:.4f}\n"
+    summary += dash_line + "\n"
     
     if avg_mae_clus < avg_mae_base:
-        print("CONCLUSION: Clustering-based approach produces more reliable predictions (Lower Error).")
+        summary += "CONCLUSION: Clustering-based approach produces more reliable predictions (Lower Error).\n"
     else:
-        print("CONCLUSION: Baseline approach produces more reliable predictions (Lower Error).")
-    print("="*50 + "\n")
+        summary += "CONCLUSION: Baseline approach produces more reliable predictions (Lower Error).\n"
+    summary += separator + "\n"
+    
+    print(summary)
+    with open(output_file_path, 'a') as f:
+        f.write(summary)
+
 
 
     # ---------------------------------------------------------
@@ -365,18 +375,6 @@ def main():
         u = np.random.choice(users_who_rated)
         actual_rating = item_user_ratings[i][u] # We know this exists
         
-        # Hide this rating for prediction? 
-        # Ideally yes, but for simplicity in this analysis we can use the existing function 
-        # which checks `user_item_ratings`. If we don't remove it, it might just return the rating?
-        # The `predict_item_based` logic sums sim * (r - mean). 
-        # If the target item is in the neighbor list (which it won't be, because `cand != i`), we are fine.
-        # But `predict_item_based` uses `user_item_ratings` to find rating of *neighbor* items.
-        # The target item `i` is what we are predicting. `user_item_ratings` contains `i` for `u`.
-        # Standard LOOCV: We should simulate `i` not being rated by `u`.
-        # However, `predict_item_based` calculates prediction based on *other* items `j` that `u` rated.
-        # So the presence of `i` in `user_item_ratings[u]` doesn't affect the calculation, 
-        # unless `i` ends up in the neighbor list (which we explicitly exclude `cand_item == i`).
-        # So we can proceed without modifying the data structure.
         
         # --- Baseline ---
         base_similarities = []

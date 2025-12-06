@@ -39,11 +39,12 @@ def main():
     # ---------------------------------------------------------
     print("Computing item statistics...")
     
-    # 2.1 Calculate Num Raters and Std Dev per Item
+    # Task 1.1 & 1.2: Calculate Num Raters and Std Dev per Item
     item_stats = df.groupby('item')['rating'].agg(['count', 'std']).reset_index()
     item_stats.rename(columns={'count': 'num_raters', 'std': 'std_rating'}, inplace=True)
     item_stats['std_rating'] = item_stats['std_rating'].fillna(0)
 
+    # Task 1.3: Create Feature Vector [num_raters, avg_rating, std_rating]
     # 2.2 Merge with Average Rating (r_i)
     # r_i likely has columns ['item', 'r_i_bar'] or similar
     feature_df = pd.merge(item_stats, r_i, on='item', how='inner')
@@ -57,7 +58,7 @@ def main():
     print(f"Feature vector shape: {X.shape}")
     print(f"Features: {feature_cols}")
 
-    # 2.3 Normalize Features
+    # Task 2: Normalize Features (Z-score standardization)
     print("Normalizing features...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -72,11 +73,13 @@ def main():
     wcss_list = []
     silhouette_scores = []
     
+    # Task 3: Apply K-means clustering (K=5, 10, 15, 20, 30, 50)
     for k in K_VALUES:
         print(f"  Clustering with K={k}...")
         kmeans = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
         
+        # Task 3.3: Calculate WCSS
         wcss_list.append(kmeans.inertia_)
         
         # Calculate Silhouette Score (sample if dataset is large)
@@ -108,7 +111,8 @@ def main():
     plt.title('Silhouette Scores for different k')
     plt.grid(True)
 
-    output_plot_path = os.path.join(RESULTS_DIR, 'clustering_metrics.png')
+    # Task 4.1: Plot the elbow curve and silhouette scores
+    output_plot_path = os.path.join(RESULTS_DIR, 'sec3_part3_clustering_metrics.png')
     plt.tight_layout()
     plt.savefig(output_plot_path)
     print(f"Plots saved to {output_plot_path}")
@@ -116,6 +120,8 @@ def main():
     # ---------------------------------------------------------
     # 4. Cluster Analysis with Optimal K
     # ---------------------------------------------------------
+    # Task 4.2: Select optimal K (Hardcoded based on analysis)
+    # Task 5: Analyze characteristics of each item cluster
     print(f"\nStarting Cluster Analysis (K={OPTIMAL_K})...")
     kmeans_opt = KMeans(n_clusters=OPTIMAL_K, random_state=RANDOM_STATE, n_init=10)
     feature_df['cluster'] = kmeans_opt.fit_predict(X_scaled)
@@ -163,13 +169,14 @@ def main():
     plt.ylabel('Number of Items')
     plt.legend(title='Item Type')
 
-    analysis_plot_path = os.path.join(RESULTS_DIR, 'cluster_analysis.png')
+    # Task 5.5 & 6.1: Visualize distribution
+    analysis_plot_path = os.path.join(RESULTS_DIR, 'sec3_part3_cluster_analysis.png')
     plt.tight_layout()
     plt.savefig(analysis_plot_path)
     print(f"Analysis plots saved to {analysis_plot_path}")
 
     # ---------------------------------------------------------
-    # 5. Prediction Comparison (Baseline vs Clustered)
+    # Task 7 & 8: Prediction Comparison (Baseline vs Clustered)
     # ---------------------------------------------------------
     print("\n--- Tasks 7 & 8: Prediction Comparison ---")
     
@@ -248,7 +255,7 @@ def main():
             
             base_pred = predict_item_based(u, i, top_neighbors_base, user_item_ratings, user_means, item_means)
 
-            # --- 5.2 Clustered Prediction (Local Neighbors) ---
+            # --- Task 7.2 & 7.3 Clustered Prediction (Local Neighbors) ---
             clus_similarities = []
             
             # Identify cluster for item i
@@ -284,12 +291,7 @@ def main():
             
             err_base = abs(actual_rating - base_pred)
             err_clus = abs(actual_rating - clus_pred)
-            
-            mae_base_list.append(err_base)
-            mae_clus_list.append(err_clus)
-
-            # --- Result ---
-            # 8.2 Calculate prediction error
+            # Task 8.2: Calculate prediction error
             # Actual rating: if missing, use user's average
             actual_rating = t_item_ratings.get(u)
             if actual_rating is None:
@@ -307,7 +309,7 @@ def main():
             if i_cluster is not None:
                 cluster_errors[i_cluster].append(err_clus)
 
-    # 8.3 Comparison Summary
+    # Task 8.3 Comparison Summary
     avg_mae_base = np.mean(mae_base_list) if mae_base_list else 0
     avg_mae_clus = np.mean(mae_clus_list) if mae_clus_list else 0
     

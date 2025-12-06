@@ -207,8 +207,11 @@ def main():
     # Baseline Candidate Set (Global)
     all_items = list(item_user_ratings.keys())
 
-    print(f"\n{'User':<10} | {'Item':<10} | {'BasePred':<8} | {'ClusPred':<8} | {'Diff'}")
-    print("-" * 60)
+    print(f"\n{'User':<10} | {'Item':<10}  | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}")
+    print("-" * 80)
+
+    mae_base_list = []
+    mae_clus_list = []
 
     for u in target_users:
         for i in target_items:
@@ -262,8 +265,37 @@ def main():
             clus_pred = predict_item_based(u, i, top_neighbors_clus, user_item_ratings, user_means, item_means)
 
             # --- Result ---
-            diff = abs(base_pred - clus_pred)
-            print(f"{u:<10} | {i:<10} | {base_pred:.2f} |   {clus_pred:.2f}     | {diff:.2f}")
+
+            # 8.2 Calculate prediction error
+            # Actual rating: if missing, use user's average
+            actual_rating = t_item_ratings.get(u)
+            if actual_rating is None:
+                actual_rating = user_means.get(u, 3.0) # Fallback to 3.0 if user mean missing
+            
+            err_base = abs(actual_rating - base_pred)
+            err_clus = abs(actual_rating - clus_pred)
+            
+            mae_base_list.append(err_base)
+            mae_clus_list.append(err_clus)
+
+            print(f"{u:<10} | {i:<10}  | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}")
+
+    # 8.3 Comparison Summary
+    avg_mae_base = np.mean(mae_base_list) if mae_base_list else 0
+    avg_mae_clus = np.mean(mae_clus_list) if mae_clus_list else 0
+    
+    print("\n" + "="*50)
+    print("SECTION 8.2 & 8.3: PREDICTION ERROR ANALYSIS")
+    print("="*50)
+    print(f"Overall MAE (Baseline - Global):   {avg_mae_base:.4f}")
+    print(f"Overall MAE (Clustering - Local):  {avg_mae_clus:.4f}")
+    print("-" * 50)
+    
+    if avg_mae_clus < avg_mae_base:
+        print("CONCLUSION: Clustering-based approach produces more reliable predictions (Lower Error).")
+    else:
+        print("CONCLUSION: Baseline approach produces more reliable predictions (Lower Error).")
+    print("="*50 + "\n")
 
 
 if __name__ == "__main__":

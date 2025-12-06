@@ -207,11 +207,21 @@ def main():
     # Baseline Candidate Set (Global)
     all_items = list(item_user_ratings.keys())
 
-    print(f"\n{'User':<10} | {'Item':<10}  | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}")
+    print(f"\n{'User':<10} | {'Item':<10} | {'Actual':<6} | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}")
     print("-" * 80)
 
     mae_base_list = []
     mae_clus_list = []
+
+    # Task 9 Variables
+    item_types = dict(zip(feature_df['item'], feature_df['type']))
+    tail_errors_base = []
+    tail_errors_clus = []
+    tail_candidates_base = []
+    tail_candidates_clus = []
+
+    # Task 11 Variables
+    cluster_errors = {c: [] for c in range(OPTIMAL_K)}
 
     for u in target_users:
         for i in target_items:
@@ -278,7 +288,24 @@ def main():
             mae_base_list.append(err_base)
             mae_clus_list.append(err_clus)
 
-            print(f"{u:<10} | {i:<10}  | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}")
+            # --- Result ---
+            # 8.2 Calculate prediction error
+            # Actual rating: if missing, use user's average
+            actual_rating = t_item_ratings.get(u)
+            if actual_rating is None:
+                actual_rating = user_means.get(u, 3.0) # Fallback to 3.0 if user mean missing
+            
+            err_base = abs(actual_rating - base_pred)
+            err_clus = abs(actual_rating - clus_pred)
+            
+            mae_base_list.append(err_base)
+            mae_clus_list.append(err_clus)
+
+            print(f"{u:<10} | {i:<10} | {actual_rating:<6.2f} | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}")
+
+            # --- Task 11 Collection (Cluster Size) ---
+            if i_cluster is not None:
+                cluster_errors[i_cluster].append(err_clus)
 
     # 8.3 Comparison Summary
     avg_mae_base = np.mean(mae_base_list) if mae_base_list else 0
@@ -295,6 +322,168 @@ def main():
         print("CONCLUSION: Clustering-based approach produces more reliable predictions (Lower Error).")
     else:
         print("CONCLUSION: Baseline approach produces more reliable predictions (Lower Error).")
+    print("="*50 + "\n")
+
+
+    # ---------------------------------------------------------
+    # Task 9: Long-Tail Analysis (Evaluate Random Sample of Tail Items)
+    # ---------------------------------------------------------
+    print("\n" + "="*50)
+    print("TASK 9: LONG-TAIL ANALYSIS")
+    print("="*50)
+
+    # 1. Select Random Tail Items
+    tail_items_list = feature_df[feature_df['type'] == 'Tail']['item'].tolist()
+    
+    # Sample 50 tail items for evaluation (to ensure we have data)
+    np.random.seed(RANDOM_STATE)
+    if len(tail_items_list) > 50:
+        sample_tail_items = np.random.choice(tail_items_list, 50, replace=False)
+    else:
+        sample_tail_items = tail_items_list
+
+    print(f"Sampling {len(sample_tail_items)} Tail Items for detailed analysis...")
+
+    tail_errors_base = []
+    tail_errors_clus = []
+    tail_candidates_base = []
+    tail_candidates_clus = []
+    
+    # Re-use prediction logic for these items
+    # We need a user who rated these items to check accuracy. 
+    # Strategy: For each sampled tail item, find a user who rated it, predict, and compare.
+    
+    for i in sample_tail_items:
+        # Find users who rated this item
+        users_who_rated = list(item_user_ratings.get(i, {}).keys())
+        if not users_who_rated:
+            continue
+            
+        # Pick one random user
+        u = np.random.choice(users_who_rated)
+        actual_rating = item_user_ratings[i][u] # We know this exists
+        
+        # Hide this rating for prediction? 
+        # Ideally yes, but for simplicity in this analysis we can use the existing function 
+        # which checks `user_item_ratings`. If we don't remove it, it might just return the rating?
+        # The `predict_item_based` logic sums sim * (r - mean). 
+        # If the target item is in the neighbor list (which it won't be, because `cand != i`), we are fine.
+        # But `predict_item_based` uses `user_item_ratings` to find rating of *neighbor* items.
+        # The target item `i` is what we are predicting. `user_item_ratings` contains `i` for `u`.
+        # Standard LOOCV: We should simulate `i` not being rated by `u`.
+        # However, `predict_item_based` calculates prediction based on *other* items `j` that `u` rated.
+        # So the presence of `i` in `user_item_ratings[u]` doesn't affect the calculation, 
+        # unless `i` ends up in the neighbor list (which we explicitly exclude `cand_item == i`).
+        # So we can proceed without modifying the data structure.
+        
+        # --- Baseline ---
+        base_similarities = []
+        for cand_item in all_items:
+            if cand_item == i: continue
+            cand_ratings = item_user_ratings.get(cand_item, {})
+            try:
+                sim = calculate_item_mean_centered_cosine(item_user_ratings[i], cand_ratings, user_means)
+                if sim > 0: base_similarities.append((cand_item, sim))
+            except: continue
+        
+        base_similarities.sort(key=lambda x: x[1], reverse=True)
+        k_base = max(1, int(len(base_similarities) * 0.20))
+        top_neighbors_base = base_similarities[:k_base]
+        base_pred = predict_item_based(u, i, top_neighbors_base, user_item_ratings, user_means, item_means)
+        
+        # --- Clustering ---
+        clus_similarities = []
+        i_cluster = item_to_cluster.get(i)
+        if i_cluster is not None:
+            cluster_candidates = cluster_items_map.get(i_cluster, [])
+            for cand_item in cluster_candidates:
+                if cand_item == i: continue
+                cand_ratings = item_user_ratings.get(cand_item, {})
+                try:
+                    sim = calculate_item_mean_centered_cosine(item_user_ratings[i], cand_ratings, user_means)
+                    if sim > 0: clus_similarities.append((cand_item, sim))
+                except: continue
+        
+        clus_similarities.sort(key=lambda x: x[1], reverse=True)
+        k_clus = max(1, int(len(clus_similarities) * 0.20))
+        top_neighbors_clus = clus_similarities[:k_clus]
+        clus_pred = predict_item_based(u, i, top_neighbors_clus, user_item_ratings, user_means, item_means)
+        
+        # Store results
+        err_base = abs(actual_rating - base_pred)
+        err_clus = abs(actual_rating - clus_pred)
+        
+        tail_errors_base.append(err_base)
+        tail_errors_clus.append(err_clus)
+        tail_candidates_base.append(len(base_similarities))
+        tail_candidates_clus.append(len(clus_similarities))
+
+    
+    avg_tail_err_base = np.mean(tail_errors_base) if tail_errors_base else 0
+    avg_tail_err_clus = np.mean(tail_errors_clus) if tail_errors_clus else 0
+    
+    avg_tail_cand_base = np.mean(tail_candidates_base) if tail_candidates_base else 0
+    avg_tail_cand_clus = np.mean(tail_candidates_clus) if tail_candidates_clus else 0
+    
+    print(f"Tail Items Evaluated: {len(tail_errors_base)}")
+    print(f"Avg Error (Tail) - Baseline:   {avg_tail_err_base:.4f}")
+    print(f"Avg Error (Tail) - Clustering: {avg_tail_err_clus:.4f}")
+    print(f"Avg Neighbor Candidates (Tail) - Baseline:   {avg_tail_cand_base:.1f}")
+    print(f"Avg Neighbor Candidates (Tail) - Clustering: {avg_tail_cand_clus:.1f}")
+    
+    if avg_tail_err_clus < avg_tail_err_base:
+        print("Insight: Clustering improves reliability for long-tail items.")
+    else:
+        print("Insight: Clustering does NOT improve reliability for long-tail items.")
+
+    # ---------------------------------------------------------
+    # Task 10: Computational Efficiency
+    # ---------------------------------------------------------
+    print("\n" + "="*50)
+    print("TASK 10: COMPUTATIONAL EFFICIENCY")
+    print("="*50)
+    
+    n_items = float(len(all_items))
+    ops_base = n_items * n_items # Compares every item with every other item
+    
+    # Calculate ops for clustering: sum of (cluster_size^2)
+    cluster_sizes = feature_df['cluster'].value_counts().to_dict()
+    ops_clus = sum([size**2 for size in cluster_sizes.values()])
+    
+    reduction_pct = ((ops_base - ops_clus) / ops_base) * 100
+    speedup = ops_base / ops_clus if ops_clus > 0 else 0
+    
+    print(f"Total Items: {int(n_items)}")
+    print(f"Baseline Comparisons (Global):  {int(ops_base):,}")
+    print(f"Clustering Comparisons (Local): {int(ops_clus):,}")
+    print(f"Reduction in Computations:      {reduction_pct:.2f}%")
+    print(f"Speedup Factor:                 {speedup:.2f}x")
+
+    # ---------------------------------------------------------
+    # Task 11: Cluster Size vs Prediction Quality
+    # ---------------------------------------------------------
+    print("\n" + "="*50)
+    print("TASK 11: CLUSTER SIZE VS PREDICTION QUALITY")
+    print("="*50)
+    
+    cluster_stats_11 = []
+    for c_id, errs in cluster_errors.items():
+        size = cluster_sizes.get(c_id, 0)
+        avg_err = np.mean(errs) if errs else 0
+        cluster_stats_11.append({'cluster': c_id, 'size': size, 'avg_error': avg_err})
+        
+    df_c_stats = pd.DataFrame(cluster_stats_11).sort_values('size', ascending=False)
+    print(df_c_stats.to_string(index=False))
+    
+    # Correlation
+    corr = df_c_stats['size'].corr(df_c_stats['avg_error'])
+    print(f"\nCorrelation between Cluster Size and Error: {corr:.4f}")
+    if corr < -0.3:
+        print("Trend: Larger clusters tend to have LOWER error (Better).")
+    elif corr > 0.3:
+        print("Trend: Larger clusters tend to have HIGHER error (Worse).")
+    else:
+        print("Trend: Weak or no correlation.")
     print("="*50 + "\n")
 
 

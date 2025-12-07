@@ -1,4 +1,7 @@
 ## need to make all number has rounded to 2 decimal places
+## add ids in top off all files 
+## remove warinings from all files 
+
 
 ## sec3.2.6 abosrewa (discount factor)
 ## sec3.2.7 abosrewa

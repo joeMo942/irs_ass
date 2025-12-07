@@ -2,7 +2,7 @@
 ## add ids in top off all files 
 ## remove warinings from all files 
 ## remove comments from part 4 sec 3
-
+## rename the output files of sec 2 part 2 and sec1 
 Please review the implementation plan for the Output Style Guide. It includes:
 
 Style patterns you can copy to other section files:

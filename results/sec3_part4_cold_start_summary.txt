@@ -70,7 +70,7 @@ TASK 8: RATING COUNT VS PREDICTION ACCURACY
   15 ratings: MAE = 0.60
   20 ratings: MAE = 0.61
 
-Plot saved to: /home/yousef/irs_ass/results/sec3_part4_rating_count_accuracy.png
+Plot saved to: c:\Users\Nour\Documents\VSCODE\IRS\irs_ass\results\sec3_part4_rating_count_accuracy.png
 Improvement rates: ['1.33%', '3.60%', '-1.20%']
 Suggested transition from 'cold-start' at ~15 ratings
 
@@ -130,7 +130,7 @@ TASK 9: HYBRID COLD-START STRATEGY
 ============================================================
 TASK 10: COLD-START ROBUSTNESS TESTING
 ============================================================
-   3 ratings: MAE = 0.70, Avg predictions = 35.36
+   3 ratings: MAE = 0.70, Avg predictions = 35.41
    5 ratings: MAE = 0.63, Avg predictions = 42.92
   10 ratings: MAE = 0.63, Avg predictions = 58.00
   20 ratings: MAE = 0.61, Avg predictions = 60.07
@@ -138,7 +138,7 @@ TASK 10: COLD-START ROBUSTNESS TESTING
   Acceptable threshold (within 20%): 0.73
   Minimum ratings for acceptable quality: 3
 
-Plot saved to: /home/yousef/irs_ass/results/sec3_part4_robustness_test.png
+Plot saved to: c:\Users\Nour\Documents\VSCODE\IRS\irs_ass\results\sec3_part4_robustness_test.png
 
 ============================================================
 TASK 14: CONFIDENCE-BASED RECOMMENDATION STRATEGY
@@ -149,7 +149,7 @@ TASK 14: CONFIDENCE-BASED RECOMMENDATION STRATEGY
   MAE (low-conf only): 0.68
   MAE (all): 0.62
 
-  Filtering low-confidence improves MAE by: 2.29%
+  Filtering low-confidence improves MAE by: 2.28%
 Key insight: Filtering low-confidence predictions can improve overall MAE.
 
 --------------------------------------------------

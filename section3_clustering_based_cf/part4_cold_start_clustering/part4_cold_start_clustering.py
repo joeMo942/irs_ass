@@ -1028,7 +1028,7 @@ def main():
     print("\n" + "="*70)
     print("TASK 15: SUMMARY AND INSIGHTS")
     print("="*70)
-    
+    # delete ba3d ma t5ls elreport ya nourrrrrrrrrrr
     summary = f"""
     15.1 EFFECTIVENESS OF CLUSTERING FOR COLD-START:
     - Clustering reduces the search space for neighbors significantly

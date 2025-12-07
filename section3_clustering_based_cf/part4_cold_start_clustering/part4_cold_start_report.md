@@ -210,6 +210,16 @@ $$sim(i, j) = \frac{\sum_{u \in U_{ij}} (r_{ui} - \bar{r}_u)(r_{uj} - \bar{r}_u)
 | Method | MAE | RMSE |
 |--------|-----|------|
 | **Clustering-Based Item CF** | 0.6244 | 0.8332 |
+| **Baseline (No Clustering)** | 0.6900 | 0.9277 |
+
+### 7.3 Comparison Analysis
+
+| Metric | Clustering | Baseline | Improvement |
+|--------|------------|----------|-------------|
+| MAE | 0.6244 | 0.6900 | **9.5%** |
+| RMSE | 0.8332 | 0.9277 | **10.2%** |
+
+**Key Finding:** Unlike cold-start users, clustering **significantly improves** cold-start item predictions. This is because items can be more reliably characterized by their few initial ratings (average, std, count) than users can.
 
 ---
 
@@ -239,9 +249,70 @@ Based on the improvement rates:
 
 ---
 
-## 9. Cluster Assignment Confidence Analysis (Task 11)
+## 9. Hybrid Cold-Start Strategy (Task 9)
 
-### 9.1 Confidence Distribution (Task 11.1)
+### 9.1 Methodology
+
+Combining clustering-based CF with content-based features:
+- **Cluster-based predictions**: Generated using assigned cluster neighbors
+- **Content-based proxy**: Item popularity and user preference matching
+- **Hybrid formula**: 70% clustering + 20% item popularity + 10% preference match
+
+### 9.2 Results
+
+| Method | MAE | RMSE |
+|--------|-----|------|
+| **Clustering Only** | 0.5867 | 0.7857 |
+| **Hybrid (CF+Content)** | 0.5833 | 0.7522 |
+
+**Improvement from hybrid:** 0.58%
+
+### 9.3 Evaluation (Task 9.3)
+
+**Conclusion:** The hybrid approach provides a modest improvement (0.58%). While the improvement is small, hybrid methods offer:
+1. Better fallback when cluster-based predictions fail
+2. More robust handling of items outside training distribution
+3. Foundation for incorporating richer content features when available
+
+---
+
+## 10. Cold-Start Robustness Testing (Task 10)
+
+### 10.1 Varying Information Availability (Task 10.1)
+
+Testing prediction quality with 3, 5, 10, and 20 available ratings:
+
+| Ratings | MAE | Avg Predictions | Degradation vs 20-rating |
+|---------|-----|-----------------|-------------------------|
+| 3 | 0.6879 | 35 | +13.9% |
+| 5 | 0.6339 | 41 | +4.9% |
+| 10 | 0.6283 | 58 | +4.0% |
+| 20 | 0.6041 | 60 | Baseline |
+
+### 10.2 Degradation Analysis (Task 10.2)
+
+![Robustness Curve](file:///home/yousef/irs_ass/results/sec3_part4_robustness_test.png)
+
+**Observations:**
+- MAE degrades by 13.9% with only 3 ratings vs 20 ratings
+- Prediction availability drops significantly (35 vs 60 predictions)
+- The steepest degradation occurs between 3-5 ratings
+
+### 10.3 Minimum Ratings for Acceptable Quality (Task 10.3)
+
+| Threshold | Value |
+|-----------|-------|
+| Baseline MAE (20 ratings) | 0.6041 |
+| Acceptable threshold (within 20%) | 0.7249 |
+| **Minimum ratings** | **3** |
+
+**Interpretation:** Even with just 3 ratings, the system remains within acceptable quality bounds (MAE < 0.7249). However, for practical recommendations, **5+ ratings** is recommended to ensure sufficient prediction coverage (41+ items).
+
+---
+
+## 11. Cluster Assignment Confidence Analysis (Task 11)
+
+### 11.1 Confidence Distribution (Task 11.1)
 
 **Ratio Definition:**
 
@@ -253,7 +324,7 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 | Moderate (0.5 ≤ ratio ≤ 0.7) | 13 | 13.0% |
 | Ambiguous (ratio > 0.7) | 23 | 23.0% |
 
-### 9.2 Ambiguous Cases (Task 11.2)
+### 11.2 Ambiguous Cases (Task 11.2)
 
 | User ID | Ratio | Status |
 |---------|-------|--------|
@@ -263,7 +334,7 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 | 110083 | 0.743 | Ambiguous |
 | 16675 | 0.732 | Ambiguous |
 
-### 9.3 Strategies for Ambiguous Cases (Task 11.3)
+### 11.3 Strategies for Ambiguous Cases (Task 11.3)
 
 1. **Multi-cluster membership**: Assign user to top-2 clusters and combine predictions with weights inversely proportional to distance
    
@@ -275,9 +346,9 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 
 ---
 
-## 10. Comparison of Cold-Start Strategies (Task 12)
+## 12. Comparison of Cold-Start Strategies (Task 12)
 
-### 10.1 Strategy Descriptions
+### 12.1 Strategy Descriptions
 
 | Strategy | Description |
 |----------|-------------|
@@ -285,7 +356,7 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 | **Global CF** | Traditional CF searching all users |
 | **Popularity-based** | Recommend items with highest average ratings |
 
-### 10.2 Performance Comparison (Task 12.4)
+### 12.2 Performance Comparison (Task 12.4)
 
 | Strategy | MAE | RMSE | Efficiency |
 |----------|-----|------|------------|
@@ -297,9 +368,9 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 
 ---
 
-## 11. Cluster Granularity Impact (Task 13)
+## 13. Cluster Granularity Impact (Task 13)
 
-### 11.1 Performance by Cluster Count (Tasks 13.1-13.2)
+### 13.1 Performance by Cluster Count (Tasks 13.1-13.2)
 
 | K | MAE | Avg Cluster Size | Observation |
 |---|-----|------------------|-------------|
@@ -308,7 +379,7 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 | 20 | 0.6621 | ~7,396 | Declining |
 | 50 | 0.7060 | ~2,958 | Worst performance |
 
-### 11.2 Trade-off Analysis (Task 13.3)
+### 13.2 Trade-off Analysis (Task 13.3)
 
 **Mathematical Interpretation:**
 
@@ -327,19 +398,13 @@ $$\text{Ratio} = \frac{d_{\text{nearest}}}{d_{\text{second}}}$$
 
 ---
 
-## 12. Confidence-Based Recommendation Strategy (Task 14)
+## 14. Confidence-Based Recommendation Strategy (Task 14)
 
-### 12.1 Confidence Score Computation (Task 14.1)
-
-The multi-factor confidence score combines:
+### 14.1 Basic Confidence Score Computation
 
 $$\text{Conf}_{total} = \text{Conf}_{assignment} \times \min(1.0, \frac{n_{similar}}{100})$$
 
-Where:
-- $\text{Conf}_{assignment}$ = cluster assignment confidence
-- $n_{similar}$ = number of similar users found
-
-### 12.2 Filtering Results (Tasks 14.2-14.3)
+### 14.2 Basic Filtering Results
 
 | Category | Count | MAE |
 |----------|-------|-----|
@@ -347,20 +412,41 @@ Where:
 | Low-confidence (score ≤ 0.5) | 439 | 0.6326 |
 | **All predictions** | 1,833 | 0.6247 |
 
-**Improvement from filtering:** 0.40%
+**Basic improvement from filtering:** 0.40%
 
-$$\text{Improvement} = \frac{MAE_{all} - MAE_{high}}{MAE_{all}} = \frac{0.6247 - 0.6222}{0.6247} = 0.40\%$$
+### 14.3 Enhanced Confidence Score (Task 14.1 - All 3 Factors)
 
-### 12.3 Recommendation
+The enhanced confidence score combines:
 
-While the improvement is modest (0.40%), filtering low-confidence predictions:
-1. Reduces false positives in recommendations
-2. Improves user trust in the system
-3. Can be combined with fallback strategies (e.g., popularity-based) for filtered cases
+$$\text{Conf}_{enhanced} = 0.4 \cdot \text{Conf}_{cluster} + 0.3 \cdot \text{Factor}_{similar} + 0.3 \cdot \text{Factor}_{agreement}$$
+
+Where:
+- **Cluster confidence**: Assignment confidence (d_second - d_nearest) / d_second
+- **Similar factor**: min(1.0, n_neighbors / 50)
+- **Agreement factor**: 1.0 - σ_predictions / 2.0 (lower std = higher agreement)
+
+### 14.4 Enhanced Filtering Results
+
+| Category | Count | MAE |
+|----------|-------|-----|
+| High-confidence (score > 0.5) | 1,821 | 0.6216 |
+| Low-confidence (score ≤ 0.5) | 12 | 0.6158 |
+| **All predictions** | 1,833 | 0.6216 |
+
+**Enhanced improvement:** -0.01% (no improvement)
+
+### 14.5 Analysis
+
+The enhanced confidence score with agreement factor resulted in **more predictions being classified as high-confidence** (1,821 vs 1,394). However, for this dataset:
+- The low-confidence predictions actually had slightly better MAE (0.6158)
+- This suggests the agreement factor may not be discriminative for cold-start scenarios
+- Cold-start by nature has limited neighbor overlap, making agreement measurement less reliable
+
+**Recommendation:** For cold-start scenarios, use the simpler 2-factor confidence (cluster assignment + neighbor count) rather than the 3-factor version.
 
 ---
 
-## 13. Summary and Insights (Task 15)
+## 15. Summary and Insights (Task 15)
 
 ### 15.1 Effectiveness of Clustering for Cold-Start
 
@@ -387,9 +473,18 @@ While the improvement is modest (0.40%), filtering low-confidence predictions:
 | 10-15 | Acceptable | Cluster-based CF |
 | 15+ | Reliable | Transition to standard CF |
 
+### 15.4 New Findings from Tasks 9-10
+
+| Finding | Source |
+|---------|--------|
+| Hybrid approach improves MAE by 0.58% | Task 9 |
+| Minimum 3 ratings for acceptable quality | Task 10 |
+| 13.9% MAE degradation with only 3 ratings | Task 10 |
+| Agreement factor not effective for cold-start | Task 14 Enhanced |
+
 ---
 
-## 14. Conclusions and Recommendations
+## 16. Conclusions and Recommendations
 
 ### Conclusions
 

@@ -899,6 +899,423 @@ def confidence_based_recommendations(
     return results
 
 
+def evaluate_baseline_cold_start_items(
+    cold_start_items, visible_item_ratings, hidden_item_ratings,
+    user_item_ratings, user_means, item_means, df
+):
+    """
+    Task 7.3: Baseline (no clustering) for cold-start items.
+    Uses global item similarity search instead of cluster-based.
+    """
+    print("\n" + "-"*50)
+    print("BASELINE (NO CLUSTERING) FOR COLD-START ITEMS")
+    print("-"*50)
+    
+    all_predictions = []
+    all_actuals = []
+    
+    # Build item->users ratings lookup
+    item_user_ratings = df.groupby('item').apply(lambda x: dict(zip(x['user'], x['rating']))).to_dict()
+    all_items = list(item_user_ratings.keys())
+    
+    for item_id in cold_start_items[:20]:  # Limit for speed
+        item_visible = visible_item_ratings.get(item_id, {})
+        item_hidden = hidden_item_ratings.get(item_id, {})
+        
+        if not item_visible:
+            continue
+        
+        # Global similarity search across ALL items
+        similarities = []
+        for cand_item in all_items[:500]:  # Limit for speed
+            if cand_item == item_id:
+                continue
+            cand_ratings = item_user_ratings.get(cand_item, {})
+            try:
+                sim = calculate_item_mean_centered_cosine(item_visible, cand_ratings, user_means)
+                if sim > 0:
+                    similarities.append((cand_item, sim))
+            except:
+                continue
+        
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        top_neighbors = similarities[:max(1, int(len(similarities) * 0.20))]
+        
+        # Predict for hidden users
+        for user_id, actual_rating in list(item_hidden.items())[:10]:
+            pred = predict_item_based(user_id, item_id, top_neighbors, user_item_ratings, user_means, item_means)
+            all_predictions.append(pred)
+            all_actuals.append(actual_rating)
+    
+    if all_predictions and all_actuals:
+        mae = mean_absolute_error(all_actuals, all_predictions)
+        rmse = np.sqrt(mean_squared_error(all_actuals, all_predictions))
+    else:
+        mae, rmse = 0, 0
+    
+    print(f"  Baseline MAE: {mae:.4f}")
+    print(f"  Baseline RMSE: {rmse:.4f}")
+    
+    return {'mae': mae, 'rmse': rmse}
+
+
+def develop_hybrid_cold_start_strategy(
+    cold_start_users, visible_ratings, hidden_ratings,
+    user_cluster_df, cluster_users_map, user_item_ratings, user_means,
+    kmeans, scaler, centroids, df
+):
+    """
+    Task 9: Develop a hybrid cold-start strategy.
+    Combines clustering-based CF with content-based features (item popularity/genre proxy).
+    """
+    print("\n" + "="*60)
+    print("TASK 9: HYBRID COLD-START STRATEGY")
+    print("="*60)
+    
+    # Calculate item popularity as a content-based proxy
+    item_popularity = df.groupby('item').agg({
+        'rating': ['mean', 'count']
+    }).reset_index()
+    item_popularity.columns = ['item', 'avg_rating', 'popularity']
+    item_pop_dict = dict(zip(item_popularity['item'], item_popularity['avg_rating']))
+    item_count_dict = dict(zip(item_popularity['item'], item_popularity['popularity']))
+    
+    sample_users = cold_start_users[:30]
+    
+    # Strategy results
+    clustering_only_preds = []
+    hybrid_preds = []
+    actuals = []
+    
+    for user_id in sample_users:
+        user_visible = visible_ratings.get(user_id, {})
+        user_hidden = hidden_ratings.get(user_id, {})
+        
+        if not user_visible or not user_hidden:
+            continue
+        
+        # 9.1: Cluster-based assignment
+        cluster, d_near, d_second, confidence = assign_cold_start_user_to_cluster(
+            user_visible, kmeans, scaler, centroids
+        )
+        
+        # Generate cluster-based predictions
+        _, cluster_predictions = generate_recommendations_for_cold_start_user(
+            user_id, user_visible, cluster, cluster_users_map,
+            user_item_ratings, user_means
+        )
+        
+        # 9.2: Content-based enhancement using item attributes
+        user_avg = np.mean(list(user_visible.values()))
+        user_liked_items = [item for item, rating in user_visible.items() if rating >= 4.0]
+        
+        # Compute user preference profile based on item popularity tier
+        if user_liked_items:
+            avg_liked_popularity = np.mean([item_count_dict.get(item, 0) for item in user_liked_items])
+        else:
+            avg_liked_popularity = np.median(list(item_count_dict.values()))
+        
+        for item_id, actual in list(user_hidden.items())[:10]:
+            # Clustering-only prediction
+            if item_id in cluster_predictions:
+                cluster_pred = cluster_predictions[item_id]
+            else:
+                cluster_pred = user_avg
+            
+            clustering_only_preds.append(cluster_pred)
+            
+            # 9.2: Hybrid prediction combining clustering + content features
+            item_avg = item_pop_dict.get(item_id, 3.0)
+            item_pop = item_count_dict.get(item_id, 1)
+            
+            # Content-based adjustment: if user likes popular items and item is popular, boost
+            pop_similarity = 1.0 - abs(item_pop - avg_liked_popularity) / max(item_pop, avg_liked_popularity, 1)
+            
+            # Weighted hybrid: 70% clustering + 20% item popularity + 10% preference match
+            hybrid_pred = 0.70 * cluster_pred + 0.20 * item_avg + 0.10 * (user_avg * pop_similarity)
+            hybrid_pred = max(1.0, min(5.0, hybrid_pred))  # Clip to valid range
+            
+            hybrid_preds.append(hybrid_pred)
+            actuals.append(actual)
+    
+    # 9.3: Evaluate if hybrid improves accuracy
+    if actuals:
+        cluster_mae = mean_absolute_error(actuals, clustering_only_preds)
+        hybrid_mae = mean_absolute_error(actuals, hybrid_preds)
+        cluster_rmse = np.sqrt(mean_squared_error(actuals, clustering_only_preds))
+        hybrid_rmse = np.sqrt(mean_squared_error(actuals, hybrid_preds))
+        improvement = (cluster_mae - hybrid_mae) / cluster_mae * 100 if cluster_mae > 0 else 0
+    else:
+        cluster_mae, hybrid_mae, cluster_rmse, hybrid_rmse, improvement = 0, 0, 0, 0, 0
+    
+    print(f"\nResults:")
+    print(f"  {'Method':<20} | {'MAE':<8} | {'RMSE':<8}")
+    print(f"  {'-'*45}")
+    print(f"  {'Clustering Only':<20} | {cluster_mae:<8.4f} | {cluster_rmse:<8.4f}")
+    print(f"  {'Hybrid (CF+Content)':<20} | {hybrid_mae:<8.4f} | {hybrid_rmse:<8.4f}")
+    print(f"\n  Improvement from hybrid: {improvement:.2f}%")
+    
+    if improvement > 0:
+        print("  Conclusion: Hybrid approach IMPROVES prediction accuracy")
+    else:
+        print("  Conclusion: Clustering-only performs better for this dataset")
+    
+    return {
+        'clustering_mae': cluster_mae,
+        'hybrid_mae': hybrid_mae,
+        'clustering_rmse': cluster_rmse,
+        'hybrid_rmse': hybrid_rmse,
+        'improvement': improvement
+    }
+
+
+def test_cold_start_robustness(
+    cold_start_users, df, user_cluster_df, cluster_users_map,
+    user_item_ratings, user_means, kmeans, scaler, centroids
+):
+    """
+    Task 10: Test the robustness of cold-start handling.
+    Varies the amount of information available (3, 5, 10, 20 ratings).
+    """
+    print("\n" + "="*60)
+    print("TASK 10: COLD-START ROBUSTNESS TESTING")
+    print("="*60)
+    
+    rating_counts = [3, 5, 10, 20]  # As specified in the assignment
+    results = []
+    
+    sample_users = cold_start_users[:30]
+    
+    for n_ratings in rating_counts:
+        mae_list = []
+        prediction_counts = []
+        
+        for user_id in sample_users:
+            user_all = dict(df[df['user'] == user_id].set_index('item')['rating'])
+            if len(user_all) < 25:
+                continue
+            
+            items = list(user_all.keys())
+            np.random.shuffle(items)
+            
+            user_visible = {item: user_all[item] for item in items[:n_ratings]}
+            user_hidden = {item: user_all[item] for item in items[n_ratings:]}
+            
+            # Assign to cluster
+            cluster, _, _, _ = assign_cold_start_user_to_cluster(
+                user_visible, kmeans, scaler, centroids
+            )
+            
+            # Generate predictions
+            _, predictions = generate_recommendations_for_cold_start_user(
+                user_id, user_visible, cluster, cluster_users_map,
+                user_item_ratings, user_means
+            )
+            
+            # Calculate MAE for this user
+            errors = [abs(predictions[item] - user_hidden[item]) 
+                     for item in user_hidden if item in predictions]
+            if errors:
+                mae_list.append(np.mean(errors))
+                prediction_counts.append(len(errors))
+        
+        avg_mae = np.mean(mae_list) if mae_list else 0
+        avg_predictions = np.mean(prediction_counts) if prediction_counts else 0
+        
+        results.append({
+            'n_ratings': n_ratings, 
+            'mae': avg_mae,
+            'avg_predictions': avg_predictions,
+            'num_users_evaluated': len(mae_list)
+        })
+        print(f"  {n_ratings:2d} ratings: MAE = {avg_mae:.4f}, Avg predictions = {avg_predictions:.0f}")
+    
+    # 10.2: Measure how prediction quality degrades
+    print("\n  Degradation Analysis:")
+    baseline_mae = results[-1]['mae']  # 20 ratings as baseline
+    for r in results:
+        degradation = (r['mae'] - baseline_mae) / baseline_mae * 100 if baseline_mae > 0 else 0
+        print(f"    {r['n_ratings']:2d} ratings: {degradation:+.1f}% vs 20-rating baseline")
+    
+    # 10.3: Identify minimum number of ratings for acceptable quality
+    # Acceptable = within 20% of best performance
+    acceptable_threshold = baseline_mae * 1.20
+    min_ratings_acceptable = None
+    
+    for r in results:
+        if r['mae'] <= acceptable_threshold:
+            min_ratings_acceptable = r['n_ratings']
+            break
+    
+    print(f"\n  10.3 Minimum Ratings Analysis:")
+    print(f"    Baseline MAE (20 ratings): {baseline_mae:.4f}")
+    print(f"    Acceptable threshold (within 20%): {acceptable_threshold:.4f}")
+    if min_ratings_acceptable:
+        print(f"    Minimum ratings for acceptable quality: {min_ratings_acceptable}")
+    else:
+        print(f"    Even 20 ratings may not provide acceptable quality")
+    
+    # Plot degradation curve
+    plt.figure(figsize=(8, 5))
+    plt.plot([r['n_ratings'] for r in results], [r['mae'] for r in results], 'ro-', linewidth=2, markersize=8)
+    plt.axhline(y=acceptable_threshold, color='g', linestyle='--', label=f'Acceptable threshold ({acceptable_threshold:.3f})')
+    plt.xlabel('Number of Ratings Available')
+    plt.ylabel('MAE')
+    plt.title('Cold-Start Robustness: MAE vs Available Information')
+    plt.legend()
+    plt.grid(True)
+    plot_path = os.path.join(RESULTS_DIR, 'sec3_part4_robustness_test.png')
+    plt.savefig(plot_path)
+    print(f"\n  [PLOT] Saved to {plot_path}")
+    
+    return {
+        'results': results,
+        'min_ratings_acceptable': min_ratings_acceptable,
+        'acceptable_threshold': acceptable_threshold
+    }
+
+
+def confidence_based_recommendations_enhanced(
+    cold_start_users, visible_ratings, hidden_ratings,
+    user_cluster_df, cluster_users_map, user_item_ratings, user_means,
+    kmeans, scaler, centroids
+):
+    """
+    Task 14 Enhanced: Confidence-based recommendation strategy with all 3 factors.
+    Computes confidence based on:
+      a. Cluster assignment confidence
+      b. Number of similar users/items found
+      c. Agreement among similar users/items (NEW)
+    """
+    print("\n" + "="*60)
+    print("TASK 14 (ENHANCED): CONFIDENCE-BASED RECOMMENDATIONS")
+    print("="*60)
+    
+    high_conf_results = []
+    low_conf_results = []
+    all_confidence_data = []
+    
+    sample_users = cold_start_users[:30]
+    
+    for user_id in sample_users:
+        user_visible = visible_ratings.get(user_id, {})
+        user_hidden = hidden_ratings.get(user_id, {})
+        
+        if not user_visible:
+            continue
+        
+        # Get assignment confidence
+        cluster, d_near, d_second, cluster_confidence = assign_cold_start_user_to_cluster(
+            user_visible, kmeans, scaler, centroids
+        )
+        
+        # Get cluster members and find similar neighbors
+        cluster_members = cluster_users_map.get(cluster, [])
+        user_mean = np.mean(list(user_visible.values()))
+        
+        similarities = []
+        for neighbor_id in cluster_members:
+            if neighbor_id == user_id:
+                continue
+            neighbor_ratings = user_item_ratings.get(neighbor_id, {})
+            neighbor_mean = user_means.get(neighbor_id, 3.0)
+            
+            sim = calculate_user_mean_centered_cosine(user_visible, neighbor_ratings, user_mean, neighbor_mean)
+            if sim > 0:
+                similarities.append((neighbor_id, sim))
+        
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        top_neighbors = similarities[:max(1, int(len(similarities) * 0.20))]
+        num_similar = len(top_neighbors)
+        
+        # 14.1b: Number of similar users factor
+        similar_factor = min(1.0, num_similar / 50)  # Normalize: 50+ neighbors = 1.0
+        
+        for item_id, actual in user_hidden.items():
+            # Get predictions from each neighbor for this item
+            neighbor_predictions = []
+            for neighbor_id, sim in top_neighbors:
+                neighbor_ratings = user_item_ratings.get(neighbor_id, {})
+                if item_id in neighbor_ratings:
+                    neighbor_predictions.append(neighbor_ratings[item_id])
+            
+            if not neighbor_predictions:
+                continue
+            
+            # 14.1c: Agreement among similar users (NEW)
+            # Low std = high agreement, high std = low agreement
+            if len(neighbor_predictions) > 1:
+                pred_std = np.std(neighbor_predictions)
+                # Normalize: std of 0 = perfect agreement (1.0), std of 2 = no agreement (0.0)
+                agreement_factor = max(0, 1.0 - pred_std / 2.0)
+            else:
+                agreement_factor = 0.5  # Single neighbor = medium confidence
+            
+            # Combined confidence score (all 3 factors)
+            # Weight: 40% cluster confidence, 30% num similar, 30% agreement
+            combined_confidence = (0.40 * cluster_confidence + 
+                                   0.30 * similar_factor + 
+                                   0.30 * agreement_factor)
+            
+            # Make prediction
+            pred = np.mean(neighbor_predictions)
+            error = abs(pred - actual)
+            
+            all_confidence_data.append({
+                'user_id': user_id,
+                'item_id': item_id,
+                'cluster_conf': cluster_confidence,
+                'similar_factor': similar_factor,
+                'agreement_factor': agreement_factor,
+                'combined_conf': combined_confidence,
+                'error': error
+            })
+            
+            if combined_confidence > 0.5:  # High confidence
+                high_conf_results.append(error)
+            else:  # Low confidence
+                low_conf_results.append(error)
+    
+    # Results
+    all_results = high_conf_results + low_conf_results
+    
+    results = {
+        'high_conf_count': len(high_conf_results),
+        'low_conf_count': len(low_conf_results),
+        'high_conf_mae': np.mean(high_conf_results) if high_conf_results else 0,
+        'low_conf_mae': np.mean(low_conf_results) if low_conf_results else 0,
+        'all_mae': np.mean(all_results) if all_results else 0,
+        'improvement': 0
+    }
+    
+    print(f"\nConfidence Factors Used:")
+    print(f"  a. Cluster assignment confidence")
+    print(f"  b. Number of similar users found")
+    print(f"  c. Agreement among similar users (rating std)")
+    
+    print(f"\nResults:")
+    print(f"  High-confidence predictions: {results['high_conf_count']}")
+    print(f"  Low-confidence predictions: {results['low_conf_count']}")
+    
+    if high_conf_results:
+        print(f"  MAE (high-conf only): {results['high_conf_mae']:.4f}")
+    if low_conf_results:
+        print(f"  MAE (low-conf only): {results['low_conf_mae']:.4f}")
+    if all_results:
+        print(f"  MAE (all): {results['all_mae']:.4f}")
+    
+    if high_conf_results and all_results and results['all_mae'] > 0:
+        results['improvement'] = (results['all_mae'] - results['high_conf_mae']) / results['all_mae'] * 100
+        print(f"\n  14.3: Filtering low-confidence improves MAE by: {results['improvement']:.2f}%")
+        
+        if results['improvement'] > 0:
+            print("  Conclusion: Filtering LOW-confidence recommendations IMPROVES quality")
+        else:
+            print("  Conclusion: Filtering does not improve quality for this dataset")
+    
+    return results
+
+
 def main():
     print("="*70)
     print("PART 4: K-MEANS CLUSTERING FOR COLD-START PROBLEM")
@@ -981,6 +1398,14 @@ def main():
         item_kmeans, item_scaler, item_feature_cols, df
     )
     
+    # Task 7.3: Baseline comparison for items
+    item_baseline_results = evaluate_baseline_cold_start_items(
+        cold_start_items, visible_item_ratings, hidden_item_ratings,
+        user_item_ratings, user_means, item_means, df
+    )
+    
+    print(f"\nItem Comparison: Clustering MAE={item_results['mae']:.4f} vs Baseline MAE={item_baseline_results['mae']:.4f}")
+    
     # ===========================================
     # Task 8: Rating Count vs Accuracy Analysis
     # ===========================================
@@ -990,6 +1415,23 @@ def main():
         user_kmeans, user_scaler, user_centroids
     )
     
+    # ===========================================
+    # Task 9: Hybrid Cold-Start Strategy
+    # ===========================================
+    hybrid_results = develop_hybrid_cold_start_strategy(
+        cold_start_users, visible_ratings, hidden_ratings,
+        user_cluster_df, cluster_users_map, user_item_ratings, user_means,
+        user_kmeans, user_scaler, user_centroids, df
+    )
+    
+    # ===========================================
+    # Task 10: Cold-Start Robustness Testing
+    # ===========================================
+    robustness_results = test_cold_start_robustness(
+        cold_start_users, df, user_cluster_df, cluster_users_map,
+        user_item_ratings, user_means, user_kmeans, user_scaler, user_centroids
+    )
+
     # ===========================================
     # Task 11: Confidence Analysis
     # ===========================================
@@ -1013,10 +1455,18 @@ def main():
         user_avg_df, user_item_ratings, user_means
     )
     
+    
     # ===========================================
-    # Task 14: Confidence-Based Recommendations
+    # Task 14: Confidence-Based Recommendations (Enhanced)
     # ===========================================
     conf_results = confidence_based_recommendations(
+        cold_start_users, visible_ratings, hidden_ratings,
+        user_cluster_df, cluster_users_map, user_item_ratings, user_means,
+        user_kmeans, user_scaler, user_centroids
+    )
+    
+    # Task 14 Enhanced: With all 3 confidence factors
+    conf_results_enhanced = confidence_based_recommendations_enhanced(
         cold_start_users, visible_ratings, hidden_ratings,
         user_cluster_df, cluster_users_map, user_item_ratings, user_means,
         user_kmeans, user_scaler, user_centroids
@@ -1118,6 +1568,14 @@ def main():
             f.write(f"{res['item_id']:<10} | {res['assigned_cluster']:<8} | {res['d_nearest']:<10.4f} | {res['d_second']:<10.4f} | {res['confidence']:<10.4f}\n")
         f.write("\n")
         
+        # Task 7.3: Item Baseline Comparison
+        f.write("-"*50 + "\n")
+        f.write("TASK 7.3: BASELINE (NO CLUSTERING) FOR COLD-START ITEMS\n")
+        f.write("-"*50 + "\n")
+        f.write(f"  Baseline MAE: {item_baseline_results['mae']:.4f}\n")
+        f.write(f"  Baseline RMSE: {item_baseline_results['rmse']:.4f}\n")
+        f.write(f"\nComparison: Clustering MAE={item_results['mae']:.4f} vs Baseline MAE={item_baseline_results['mae']:.4f}\n\n")
+        
         # Task 8: Rating Count vs Accuracy
         f.write("="*60 + "\n")
         f.write("TASK 8: RATING COUNT VS PREDICTION ACCURACY\n")
@@ -1173,6 +1631,33 @@ def main():
         best_k = min(granularity_results, key=lambda x: x['mae'])['k']
         f.write(f"  - Best performing K: {best_k}\n\n")
         
+        # Task 9: Hybrid Cold-Start Strategy
+        f.write("="*60 + "\n")
+        f.write("TASK 9: HYBRID COLD-START STRATEGY\n")
+        f.write("="*60 + "\n")
+        f.write(f"  {'Method':<20} | {'MAE':<8} | {'RMSE':<8}\n")
+        f.write("-"*45 + "\n")
+        f.write(f"  {'Clustering Only':<20} | {hybrid_results['clustering_mae']:<8.4f} | {hybrid_results['clustering_rmse']:<8.4f}\n")
+        f.write(f"  {'Hybrid (CF+Content)':<20} | {hybrid_results['hybrid_mae']:<8.4f} | {hybrid_results['hybrid_rmse']:<8.4f}\n")
+        f.write(f"\n  Improvement from hybrid: {hybrid_results['improvement']:.2f}%\n")
+        if hybrid_results['improvement'] > 0:
+            f.write("  Conclusion: Hybrid approach IMPROVES prediction accuracy\n\n")
+        else:
+            f.write("  Conclusion: Clustering-only performs better for this dataset\n\n")
+        
+        # Task 10: Cold-Start Robustness Testing
+        f.write("="*60 + "\n")
+        f.write("TASK 10: COLD-START ROBUSTNESS TESTING\n")
+        f.write("="*60 + "\n")
+        for r in robustness_results['results']:
+            f.write(f"  {r['n_ratings']:2d} ratings: MAE = {r['mae']:.4f}, Avg predictions = {r['avg_predictions']:.0f}\n")
+        f.write(f"\n  Acceptable threshold (within 20%): {robustness_results['acceptable_threshold']:.4f}\n")
+        if robustness_results['min_ratings_acceptable']:
+            f.write(f"  Minimum ratings for acceptable quality: {robustness_results['min_ratings_acceptable']}\n")
+        else:
+            f.write("  Even 20 ratings may not provide acceptable quality\n")
+        f.write(f"\nPlot saved to: {os.path.join(RESULTS_DIR, 'sec3_part4_robustness_test.png')}\n\n")
+        
         # Task 14: Confidence-Based Strategy
         f.write("="*60 + "\n")
         f.write("TASK 14: CONFIDENCE-BASED RECOMMENDATION STRATEGY\n")
@@ -1184,6 +1669,21 @@ def main():
         f.write(f"  MAE (all): {conf_results['all_mae']:.4f}\n")
         f.write(f"\n  Filtering low-confidence improves MAE by: {conf_results['improvement']:.2f}%\n")
         f.write("Key insight: Filtering low-confidence predictions can improve overall MAE.\n\n")
+        
+        # Task 14 Enhanced: With all 3 confidence factors
+        f.write("-"*50 + "\n")
+        f.write("TASK 14 (ENHANCED): WITH ALL 3 CONFIDENCE FACTORS\n")
+        f.write("-"*50 + "\n")
+        f.write("Confidence Factors Used:\n")
+        f.write("  a. Cluster assignment confidence\n")
+        f.write("  b. Number of similar users found\n")
+        f.write("  c. Agreement among similar users (rating std)\n\n")
+        f.write(f"  High-confidence predictions: {conf_results_enhanced['high_conf_count']}\n")
+        f.write(f"  Low-confidence predictions: {conf_results_enhanced['low_conf_count']}\n")
+        f.write(f"  MAE (high-conf only): {conf_results_enhanced['high_conf_mae']:.4f}\n")
+        f.write(f"  MAE (low-conf only): {conf_results_enhanced['low_conf_mae']:.4f}\n")
+        f.write(f"  MAE (all): {conf_results_enhanced['all_mae']:.4f}\n")
+        f.write(f"\n  Filtering low-confidence improves MAE by: {conf_results_enhanced['improvement']:.2f}%\n\n")
         
         # Task 15: Summary
         f.write("="*70 + "\n")

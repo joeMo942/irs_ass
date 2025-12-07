@@ -1,11 +1,6 @@
-*.csv
 .vscode/
 venv/
 *.json
-results/*.png
-results/*.txt
 dataset/Dianping_SocialRec_2015
 *.pyc
-!results/target_users.txt
-!results/target_items.txt
 __pycache__

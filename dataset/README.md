@@ -1,15 +1,13 @@
 # Dataset
 
-Place your recommendation system dataset files here.
+## Dianping Social Recommendation Dataset (2015)
 
-## Expected files:
-- `ratings.csv` or `ratings.dat` - User ratings data
-- `users.csv` or `users.dat` - User information (optional)
-- `items.csv` or `movies.dat` - Item/movie information (optional)
+📥 **Download Link:** [https://lihui.info/file/Dianping_SocialRec_2015.tar.bz2](https://lihui.info/file/Dianping_SocialRec_2015.tar.bz2)
 
-## Data format
-Typical rating data should contain:
-- User ID
-- Item ID  
-- Rating
-- Timestamp (optional)
+After downloading, extract the contents to this directory:
+```
+dataset/Dianping_SocialRec_2015/rating.txt
+```
+
+---
+

@@ -1,12 +1,12 @@
-# Helper Functions and Utilities
+# Utils
 
-This folder contains utility functions used across different sections of the project.
+Utility modules for the collaborative filtering project.
 
-## Suggested modules:
+## Modules
 
-- `data_loader.py` - Functions for loading and preprocessing datasets
-- `metrics.py` - Evaluation metrics (RMSE, MAE, Precision@K, Recall@K)
-- `similarity.py` - Similarity measures (cosine, pearson, euclidean)
-- `visualization.py` - Plotting and visualization helpers
-
-Create these modules as needed for your implementation.
+| File | Description |
+|------|-------------|
+| `data_loader.py` | Load dataset and precomputed statistics |
+| `similarity.py` | User and item similarity calculations |
+| `prediction.py` | Rating prediction functions |
+| `clustering.py` | Custom K-Means, StandardScaler, and metrics |

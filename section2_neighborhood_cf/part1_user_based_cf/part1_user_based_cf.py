@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 # Add the project root to sys.path to allow importing from utils
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(_file_), '..', '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from utils import data_loader
 from utils import similarity
@@ -55,7 +55,7 @@ def get_top_neighbors(target_user_id, target_user_ratings, all_users_ratings, it
     if target_user_id in candidate_users:
         candidate_users.remove(target_user_id)
         
-    print(f"  Comparing against {len(candidate_users)} candidate users.")
+    print(f"    {'Candidate users:':<35} {len(candidate_users):>10,}")
     
     similarities = []
     
@@ -196,7 +196,7 @@ def predict_ratings_mean_centered(target_user_id, neighbors, all_users_ratings, 
 # ==========================================
 
 def analyze_negative_sim_positive_cosine(target_user, target_ratings, all_users_ratings):
-    print("\n  Analysis: Negative Pearson but Positive Cosine")
+    print("\n  Analysis 1: Negative Pearson vs Positive Cosine")
     count = 0
     for user_id, ratings in all_users_ratings.items():
         if user_id == target_user: continue
@@ -208,12 +208,15 @@ def analyze_negative_sim_positive_cosine(target_user, target_ratings, all_users_
         if p < -0.5: 
             c = similarity.calculate_user_raw_cosine(target_ratings, ratings)
             if c > 0.1:
-                print(f"    User {user_id}: Pearson={p:.3f}, Cosine={c:.3f}, Common={len(common)}")
+                print(f"      • User {user_id}:")
+                print(f"        {'Pearson:':<25} {p:>10.4f}")
+                print(f"        {'Cosine:':<25} {c:>10.4f}")
+                print(f"        {'Common items:':<25} {len(common):>10,}")
                 count += 1
                 if count >= 3: break
 
 def analyze_rating_scales(target_user, target_ratings, neighbors, user_means):
-    print("\n  Analysis: Different Rating Scales (Generous vs Strict)")
+    print("\n  Analysis 2: Rating Scale Differences")
     target_mean = user_means[target_user]
     max_diff = 0
     best_ex = None
@@ -228,16 +231,19 @@ def analyze_rating_scales(target_user, target_ratings, neighbors, user_means):
             best_ex = nid
             
     if best_ex:
-        print(f"    Target Mean: {target_mean:.2f}. Neighbor {best_ex} Mean: {user_means[best_ex]:.2f}. Diff: {max_diff:.2f}. Sim: {neighbor_dict[best_ex]:.3f}")
+        print(f"      • Comparison with User {best_ex}:")
+        print(f"        {'Target mean:':<25} {target_mean:>10.2f}")
+        print(f"        {'Neighbor mean:':<25} {user_means[best_ex]:>10.2f}")
+        print(f"        {'Difference:':<25} {max_diff:>10.2f}")
+        print(f"        {'Similarity:':<25} {neighbor_dict[best_ex]:>10.4f}")
     else:
         print("    No high-sim neighbor with large mean difference found.")
 
 
 def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users, all_items):
-    print(f"\n--- Case Study 1: User-Based CF (Raw Cosine) for {target_user} ---")
+    print(f"\n--- Case Study 1: Raw Cosine Similarity ---")
     
     # 1 & 2: Raw Cosine & Top 20%
-    print("  Calculating Raw Cosine Neighbors...")
     _, neighbors_raw = get_top_neighbors(
         target_user, 
         target_ratings, 
@@ -246,19 +252,24 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
         similarity.calculate_user_raw_cosine,
         only_positive=True
     )
-    print(f"  Found {len(neighbors_raw)} neighbors (Raw Cosine). Top 5: {neighbors_raw[:5]}")
+    print(f"\n  Raw Cosine Neighbors:")
+    print(f"    {'Neighbors found:':<35} {len(neighbors_raw):>10,}")
+    print(f"    Top 5:")
+    for uid, score in neighbors_raw[:5]:
+        print(f"      • User {uid}: {score:.4f}")
     
     # 3: Predict Raw
-    print("  Predicting ratings (Raw)...")
     predictions_raw = predict_ratings_weighted_avg(target_user, neighbors_raw, all_users_ratings, all_items)
-    print(f"  Predicted {len(predictions_raw)} items. Top 5: {predictions_raw[:5]}")
+    print(f"\n  Predictions (Raw):")
+    print(f"    {'Items predicted:':<35} {len(predictions_raw):>10,}")
+    print(f"    Top 5:")
+    for iid, pred in predictions_raw[:5]:
+        print(f"      • Item {iid}: {pred:.4f}")
     
     # 4: Beta
     beta = 0.30 * len(target_ratings)
-    print(f"  Beta: {beta}")
     
     # 5: DS
-    print("  Calculating Discounted Similarity (Cosine) Neighbors...")
     _, neighbors_ds = get_top_neighbors(
         target_user,
         target_ratings,
@@ -268,43 +279,59 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
         similarity_args={'beta': beta},
         only_positive=True
     )
-    print(f"  Found {len(neighbors_ds)} neighbors (DS). Top 5: {neighbors_ds[:5]}")
+    print(f"\n  Discounted Similarity:")
+    print(f"    {'Beta:':<35} {beta:>10.2f}")
+    print(f"    {'DS Neighbors found:':<35} {len(neighbors_ds):>10,}")
+    print(f"    Top 5:")
+    for uid, score in neighbors_ds[:5]:
+        print(f"      • User {uid}: {score:.4f}")
     
     # 6: Predict DS
-    print("  Predicting ratings (DS)...")
     predictions_ds = predict_ratings_weighted_avg(target_user, neighbors_ds, all_users_ratings, all_items)
-    print(f"  Predicted {len(predictions_ds)} items. Top 5: {predictions_ds[:5]}")
+    print(f"\n  Predictions (DS):")
+    print(f"    {'Items predicted:':<35} {len(predictions_ds):>10,}")
+    print(f"    Top 5:")
+    for iid, pred in predictions_ds[:5]:
+        print(f"      • Item {iid}: {pred:.4f}")
     
     # Comparison
     set_raw = set(u for u, s in neighbors_raw)
     set_ds = set(u for u, s in neighbors_ds)
-    print(f"  Comparison: Common={len(set_raw & set_ds)}, Only Raw={len(set_raw - set_ds)}, Only DS={len(set_ds - set_raw)}")
+    print(f"\n  Neighbor Comparison:")
+    print(f"    {'Common neighbors:':<35} {len(set_raw & set_ds):>10,}")
+    print(f"    {'Only in Raw:':<35} {len(set_raw - set_ds):>10,}")
+    print(f"    {'Only in DS:':<35} {len(set_ds - set_raw):>10,}")
 
 def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users, user_means):
-    print(f"\n--- Case Study 2: User-Based CF (Pearson) for {target_user} ---")
+    print(f"\n--- Case Study 2: Pearson Correlation ---")
     
     # 1 & 2: Pearson & Top 20%
-    print("  Calculating Pearson Neighbors...")
     all_sims_pearson, neighbors_pearson = get_top_neighbors(
         target_user, 
         target_ratings, 
         all_users_ratings,
         item_users,
         similarity.calculate_user_pearson,
-        only_positive=False # CS2 allows negative for distribution analysis, though top 20% likely positive
+        only_positive=False
     )
-    print(f"  Found {len(neighbors_pearson)} neighbors (Pearson). Top 5: {neighbors_pearson[:5]}")
+    print(f"\n  Pearson Neighbors:")
+    print(f"    {'Neighbors found:':<35} {len(neighbors_pearson):>10,}")
+    print(f"    Top 5:")
+    for uid, score in neighbors_pearson[:5]:
+        print(f"      • User {uid}: {score:.4f}")
     
     # 3: Predict Pearson
-    print("  Predicting ratings (Pearson)...")
     predictions_pearson = predict_ratings_mean_centered(target_user, neighbors_pearson, all_users_ratings, user_means)
-    print(f"  Predicted {len(predictions_pearson)} items. Top 5: {predictions_pearson[:5]}")
+    print(f"\n  Predictions (Pearson):")
+    print(f"    {'Items predicted:':<35} {len(predictions_pearson):>10,}")
+    print(f"    Top 5:")
+    for iid, pred in predictions_pearson[:5]:
+        print(f"      • Item {iid}: {pred:.4f}")
     
     # 4: Beta
     beta = 0.30 * len(target_ratings)
     
     # 5: DS Pearson
-    print("  Calculating Discounted Similarity (Pearson) Neighbors...")
     _, neighbors_ds = get_top_neighbors(
         target_user,
         target_ratings,
@@ -314,16 +341,25 @@ def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users,
         similarity_args={'beta': beta},
         only_positive=False
     )
+    print(f"\n  Discounted Similarity (Pearson):")
+    print(f"    {'Beta:':<35} {beta:>10.2f}")
+    print(f"    {'DS Neighbors found:':<35} {len(neighbors_ds):>10,}")
+    print(f"    Top 5:")
+    for uid, score in neighbors_ds[:5]:
+        print(f"      • User {uid}: {score:.4f}")
     
     # 6: Predict DS
-    print("  Predicting ratings (DS)...")
     predictions_ds = predict_ratings_mean_centered(target_user, neighbors_ds, all_users_ratings, user_means)
-    print(f"  Predicted {len(predictions_ds)} items. Top 5: {predictions_ds[:5]}")
+    print(f"\n  Predictions (DS):")
+    print(f"    {'Items predicted:':<35} {len(predictions_ds):>10,}")
+    print(f"    Top 5:")
+    for iid, pred in predictions_ds[:5]:
+        print(f"      • Item {iid}: {pred:.4f}")
 
-    return all_sims_pearson # For CS3 or deeper analysis if needed
+    return all_sims_pearson
 
 def run_case_study_3(target_user, target_ratings, all_users_ratings, item_users, user_means, all_items):
-    print(f"\n--- Case Study 3: Analysis & Comparisons for {target_user} ---")
+    print(f"\n--- Case Study 3: Analysis & Comparisons ---")
     
     # We need neighbors for analysis.
     all_sims_p, neighbors_p = get_top_neighbors(target_user, target_ratings, all_users_ratings, item_users, similarity.calculate_user_pearson, only_positive=False)
@@ -336,22 +372,29 @@ def run_case_study_3(target_user, target_ratings, all_users_ratings, item_users,
 
 
 def main():
-    print("Loading data...")
+    print("\n" + "="*80)
+    print("SECTION 2 PART 1: User-Based Collaborative Filtering")
+    print("="*80)
+    
+    print("\n--- Loading Data ---")
     try:
         df = data_loader.get_preprocessed_dataset()
         target_users = data_loader.get_target_users()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"  [ERROR] {e}")
         return
 
-    print("Data loaded. Converting to dictionaries...")
+    print(f"  [DONE] Dataset loaded successfully")
     all_users_ratings = get_user_ratings_dict(df)
     item_users = get_item_users_dict(df)
     user_means = get_user_means(all_users_ratings)
     all_items = set(df['item'].unique())
+    print(f"  [DONE] Data converted to dictionaries")
     
     for target_user in target_users:
-        print(f"\n{'='*60}\nPROCESSING TARGET USER: {target_user}\n{'='*60}")
+        print("\n" + "="*80)
+        print(f"TARGET USER: {target_user}")
+        print("="*80)
         
         # Run Case Study 1
         run_case_study_1(target_user, all_users_ratings[target_user], all_users_ratings, item_users, all_items)
@@ -362,7 +405,9 @@ def main():
         # Run Case Study 3
         run_case_study_3(target_user, all_users_ratings[target_user], all_users_ratings, item_users, user_means, all_items)
         
-    print("\nAll Case Studies Completed.")
+    print("\n" + "="*80)
+    print("[DONE] Section 2 Part 1: User-Based CF completed successfully.")
+    print("="*80)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()

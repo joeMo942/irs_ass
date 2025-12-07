@@ -17,14 +17,14 @@ from utils.data_loader import get_preprocessed_dataset, get_target_users, get_ta
 from utils.similarity import calculate_user_mean_centered_cosine
 from utils.prediction import predict_user_based
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), 'results_media')
+RESULTS_DIR = os.path.join(project_root, 'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
 def calculate_co_rating_stats(df):
     """
     Calculates avg, max, min co-ratings for each user efficiently using sparse matrices.
     """
-    print("Calculating Co-rating Statistics...")
+    print("\n--- Calculating Co-rating Statistics ---")
     
     # Map users and items to matrix indices
     unique_users = sorted(df['user'].unique())
@@ -44,7 +44,7 @@ def calculate_co_rating_stats(df):
     n_users = len(unique_users)
     n_items = df['item_idx'].max() + 1
     
-    print(f"  Matrix Size: {n_users} users x {n_items} items")
+    print(f"  {'Matrix size:':<40} {n_users:,} users x {n_items:,} items")
     
     # Create CSR matrix
     # data is all 1s because we just care about count of common items
@@ -65,8 +65,8 @@ def calculate_co_rating_stats(df):
     start_time = time.time()
     for u_idx in range(n_users):
         if u_idx % 1000 == 0:
-             elapsed = time.time() - start_time
-             print(f"  Processed {u_idx}/{n_users} users... ({elapsed:.2f}s)")
+            elapsed = time.time() - start_time
+            print(f"  Processed {u_idx}/{n_users} users... ({elapsed:.2f}s)")
         
         # Get user's row
         user_vector = R[u_idx]
@@ -119,45 +119,53 @@ def calculate_co_rating_stats(df):
     return pd.DataFrame(stats_list)
 
 def main():
-    print("Loading data...")
+    print("\n" + "="*80)
+    print("SECTION 3 PART 2: User Clustering (Common Ratings)")
+    print("="*80)
+    
+    print("\n--- Loading Data ---")
     df = get_preprocessed_dataset()
     user_avg_ratings = get_user_avg_ratings() # r_u_bar
     target_users = get_target_users()
     target_items = get_target_items()
+    print(f"  [DONE] Data loaded successfully")
     
     # ---------------------------------------------------------
     # 1. Co-rating Statistics
     # ---------------------------------------------------------
-    stats_file = os.path.join(project_root, 'results', 'user_corating_stats.csv')
+    print("\n--- Step 1: Co-rating Statistics ---")
+    stats_file = os.path.join(RESULTS_DIR, 'sec3_part2_user_corating_stats.csv')
     if os.path.exists(stats_file):
-        print("Loading cached co-rating stats...")
         stats_df = pd.read_csv(stats_file)
+        print(f"  [DONE] Loaded cached co-rating stats")
     else:
         stats_df = calculate_co_rating_stats(df)
         stats_df.to_csv(stats_file, index=False)
+        print(f"  [SAVED] sec3_part2_user_corating_stats.csv")
         
-    print(stats_df.head())
-    
     # ---------------------------------------------------------
     # 2. Normalization
     # ---------------------------------------------------------
+    print("\n--- Step 2: Feature Normalization ---")
     feature_cols = ['avg_common', 'max_common', 'min_common']
     X = stats_df[feature_cols].values
     
-    print("\nFeature Statistics (Pre-Norm):")
-    print(stats_df[feature_cols].describe())
+    print(f"  Feature statistics (pre-normalization):")
+    desc = stats_df[feature_cols].describe()
+    for col in feature_cols:
+        print(f"    • {col}: mean={desc.loc['mean', col]:.2f}, std={desc.loc['std', col]:.2f}")
     
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
+    print(f"  [DONE] Features normalized with StandardScaler")
     
     # ---------------------------------------------------------
     # 3. K-Means
     # ---------------------------------------------------------
+    print("\n--- Step 3: K-Means Clustering ---")
     k_values = [5, 10, 15, 20, 30, 50]
     wcss = []
     sil_scores = []
-    
-    print("\nRunning K-Means...")
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
@@ -171,7 +179,7 @@ def main():
             score = silhouette_score(X_scaled, labels)
         
         sil_scores.append(score)
-        print(f"  K={k}: WCSS={kmeans.inertia_:.2f}, Sil={score:.4f}")
+        print(f"    • K={k:>2}: WCSS={kmeans.inertia_:>12.2f}, Silhouette={score:>8.4f}")
         
     # Plot Elbow & Silhouette
     fig, ax1 = plt.subplots(figsize=(10, 5))
@@ -184,18 +192,20 @@ def main():
     ax2.set_ylabel('Silhouette Score', color='r')
     
     plt.title('Elbow and Silhouette Analysis')
-    plt.savefig(os.path.join(RESULTS_DIR, 'clustering_metrics.png'))
+    plt.savefig(os.path.join(RESULTS_DIR, 'sec3_part2_clustering_metrics.png'))
     plt.close()
+    print(f"  [PLOT] sec3_part2_clustering_metrics.png")
     
     # Optimal K Selection (Heuristic: Max Sil or Elbow)
     # Using Max Silhouette for automation
     best_idx = np.argmax(sil_scores)
     optimal_k = k_values[best_idx]
-    print(f"\nOptimal K based on Max Silhouette: {optimal_k}")
+    print(f"\n  {'Optimal K (Max Silhouette):':<40} {optimal_k:>15}")
     
     # ---------------------------------------------------------
     # 5. Cluster Analysis (Optimal K)
     # ---------------------------------------------------------
+    print("\n--- Step 4: Cluster Analysis ---")
     final_kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
     stats_df['cluster'] = final_kmeans.fit_predict(X_scaled)
     
@@ -204,8 +214,9 @@ def main():
     cluster_counts = stats_df['cluster'].value_counts()
     cluster_summary['count'] = cluster_counts
     
-    print("\nCluster Summary (Centroids):")
-    print(cluster_summary)
+    print(f"\n  Cluster Summary:")
+    for idx, row in cluster_summary.iterrows():
+        print(f"    • Cluster {idx}: count={int(row['count']):,}, avg_common={row['avg_common']:.2f}")
     
     # Visualize Distribution (Scatter 3D or Pairplot)
     # We can do a 3D plot of the 3 features
@@ -214,19 +225,20 @@ def main():
     # Sample points for visualization if too many
     plot_sample = stats_df.sample(n=min(5000, len(stats_df)), random_state=42)
     sc = ax.scatter(plot_sample['avg_common'], plot_sample['max_common'], plot_sample['min_common'],
-               c=plot_sample['cluster'], cmap='viridis', s=5)
+            c=plot_sample['cluster'], cmap='viridis', s=5)
     ax.set_xlabel('Avg Common')
     ax.set_ylabel('Max Common')
     ax.set_zlabel('Min Common')
     plt.colorbar(sc, label='Cluster')
     plt.title(f'Cluster Distribution (K={optimal_k})')
-    plt.savefig(os.path.join(RESULTS_DIR, 'cluster_scatter_3d.png'))
+    plt.savefig(os.path.join(RESULTS_DIR, 'sec3_part2_cluster_scatter_3d.png'))
     plt.close()
+    print(f"  [PLOT] sec3_part2_cluster_scatter_3d.png")
     
     # ---------------------------------------------------------
     # 6. Collaborative Filtering
     # ---------------------------------------------------------
-    print("\nStarting Collaborative Filtering...")
+    print("\n--- Step 5: Collaborative Filtering ---")
     
     # User-Item Ratings (Dict)
     # We need efficient lookup. Utils doesn't have a direct dict loader?
@@ -252,11 +264,13 @@ def main():
     
     for t_user in target_users:
         if t_user not in user_cluster_map:
-            print(f"Target User {t_user} not found in clusters.")
+            print(f"  [WARNING] Target User {t_user} not found in clusters.")
             continue
             
         c_id = user_cluster_map[t_user]
-        print(f"\nProcessing Target User {t_user} (Cluster {c_id})")
+        print("\n" + "-"*60)
+        print(f"  TARGET USER: {t_user} (Cluster {c_id})")
+        print("-"*60)
         
         # Get Candidates (Same Cluster)
         candidates = cluster_users[c_id]
@@ -307,7 +321,9 @@ def main():
         
         avg_common_top = np.mean([x[2] for x in top_neighbors]) if top_neighbors else 0
         
-        print(f"  Top 20% Neighbors: {len(top_neighbors)} (Avg Common: {avg_common_top:.1f})")
+        print(f"    {'Cluster candidates:':<35} {len(candidates):>10,}")
+        print(f"    {'Top 20% neighbors:':<35} {len(top_neighbors):>10,}")
+        print(f"    {'Avg common items:':<35} {avg_common_top:>10.1f}")
         
         # Predict
         for t_item in target_items:
@@ -327,7 +343,10 @@ def main():
             actual = user_ratings_dict[t_user].get(t_item, None)
             error = abs(actual - pred) if actual is not None else np.nan
             
-            print(f"  Item {t_item}: Pred={pred:.4f}, Actual={actual}, Error={error}")
+            print(f"      • Item {t_item}:")
+            print(f"        {'Prediction:':<25} {pred:>10.4f}")
+            print(f"        {'Actual:':<25} {str(actual) if actual else 'N/A':>10}")
+            print(f"        {'Error:':<25} {f'{error:.4f}' if not np.isnan(error) else 'N/A':>10}")
             
             results.append({
                 'User': t_user,
@@ -341,23 +360,16 @@ def main():
             
     # Save Results
     res_df = pd.DataFrame(results)
-    res_df.to_csv(os.path.join(project_root, 'results', 'sec3_part2_predictions.csv'), index=False)
-    print("\nPredictions saved.")
+    res_df.to_csv(os.path.join(RESULTS_DIR, 'sec3_part2_predictions.csv'), index=False)
+    print(f"\n  [SAVED] sec3_part2_predictions.csv")
     
     # ---------------------------------------------------------
     # 7. Comparison with Part 1 & Analysis
     # ---------------------------------------------------------
-    # Generate Report Content
-    # (Placeholder logic)
-    print("Generating report text...")
     
-    with open('report_part2.md', 'w') as f:
-        f.write(f"# Part 2 Report\n\n")
-        f.write(f"## Clustering Stats\n")
-        f.write(f"- Optimal K: {optimal_k}\n")
-        f.write(cluster_summary.to_markdown())
-        f.write(f"\n\n## Prediction Results\n")
-        f.write(res_df.to_markdown())
+    print("\n" + "="*80)
+    print("[DONE] Section 3 Part 2: User Clustering completed successfully.")
+    print("="*80)
 
 if __name__ == "__main__":
     main()

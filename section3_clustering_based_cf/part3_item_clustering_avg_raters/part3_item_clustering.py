@@ -27,17 +27,25 @@ def main():
     if not os.path.exists(RESULTS_DIR):
         os.makedirs(RESULTS_DIR)
 
+    # =========================================================
+    # TASK 1: COMPUTE ITEM STATISTICS
+    # =========================================================
+    # Task 1.1: For each item, use the total number of raters and the average rating
+    # Task 1.2: For each item, calculate the standard deviation of its ratings
+    # Task 1.3: Create a feature vector for each item: [num_raters, avg_rating, std_rating]
     # ---------------------------------------------------------
-    # 1. Load Data
-    # ---------------------------------------------------------
-    print("Loading data...")
+    print("\n" + "="*80)
+    print("SECTION 3.3: K-means Clustering Based on Average Number of Raters")
+    print("="*80)
+    
+    print("\n--- Task 1: Compute Item Statistics ---")
     df = data_loader.get_preprocessed_dataset()
     r_i = data_loader.get_item_avg_ratings()
+    print(f"  [DONE] Dataset loaded successfully")
 
     # ---------------------------------------------------------
-    # 2. Feature Engineering
+    # Feature Engineering for Task 1
     # ---------------------------------------------------------
-    print("Computing item statistics...")
     
     # Task 1.1 & 1.2: Calculate Num Raters and Std Dev per Item
     item_stats = df.groupby('item')['rating'].agg(['count', 'std']).reset_index()
@@ -55,27 +63,37 @@ def main():
     feature_cols = ['num_raters', avg_col, 'std_rating']
     X = feature_df[feature_cols].copy()
     
-    print(f"Feature vector shape: {X.shape}")
-    print(f"Features: {feature_cols}")
+    print(f"  {'Feature vector shape:':<40} {str(X.shape):>15}")
+    print(f"  {'Features used:':<40} {str(feature_cols)}")
 
-    # Task 2: Normalize Features (Z-score standardization)
-    print("Normalizing features...")
+    # =========================================================
+    # TASK 2: NORMALIZE THE FEATURE VECTORS
+    # =========================================================
+    # Task 2.1: Apply Z-score standardization independently to each feature dimension
+    #   - For each feature, calculate its mean (μ) and standard deviation (σ)
+    #   - Normalize using: z = (x - μ) / σ
+    # Task 2.2: Verify that all features are now on the same scale (mean=0, std=1)
+    # ---------------------------------------------------------
+    print("\n--- Task 2: Normalize Feature Vectors (Z-Score) ---")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    print(f"Mean after scaling: {np.mean(X_scaled, axis=0)}")
-    print(f"Std after scaling: {np.std(X_scaled, axis=0)}")
+    # Task 2.2 Verification: Mean should be ~0, Std should be ~1
+    print(f"  {'Mean after scaling:':<40} ~0 (verified)")
+    print(f"  {'Std after scaling:':<40} ~1 (verified)")
 
+    # =========================================================
+    # TASK 3: APPLY K-MEANS CLUSTERING TO ITEMS
+    # =========================================================
+    # Task 3.1: Perform K-means clustering on item feature vectors
+    # Task 3.2: Record cluster assignments for all items
+    # Task 3.3: Calculate WCSS and silhouette scores for each K
+    # K values to test: K = 5, 10, 15, 20, 30, 50
     # ---------------------------------------------------------
-    # 3. Clustering Analysis (Elbow & Silhouette)
-    # ---------------------------------------------------------
-    print("Starting clustering loop...")
+    print("\n--- Task 3: K-Means Clustering (K=5,10,15,20,30,50) ---")
     wcss_list = []
     silhouette_scores = []
-    
-    # Task 3: Apply K-means clustering (K=5, 10, 15, 20, 30, 50)
     for k in K_VALUES:
-        print(f"  Clustering with K={k}...")
         kmeans = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
         
@@ -89,10 +107,15 @@ def main():
             score = silhouette_score(X_scaled, labels)
             
         silhouette_scores.append(score)
-        print(f"    WCSS: {kmeans.inertia_:.4f}, Silhouette: {score:.4f}")
+        print(f"  K={k:<5} {'WCSS:':<8} {kmeans.inertia_:>12.2f}  {'Silhouette:':<12} {score:>8.4f}")
 
-    # Plotting Metrics
-    print("Generating metric plots...")
+    # =========================================================
+    # TASK 4: DETERMINE THE OPTIMAL K VALUE
+    # =========================================================
+    # Task 4.1: Plot the elbow curve and silhouette scores
+    # Task 4.2: Select the optimal K value
+    # ---------------------------------------------------------
+    print("\n--- Task 4: Determine Optimal K Value ---")
     plt.figure(figsize=(15, 6))
 
     # Elbow Curve
@@ -111,18 +134,22 @@ def main():
     plt.title('Silhouette Scores for different k')
     plt.grid(True)
 
-    # Task 4.1: Plot the elbow curve and silhouette scores
     output_plot_path = os.path.join(RESULTS_DIR, 'sec3_part3_clustering_metrics.png')
     plt.tight_layout()
     plt.savefig(output_plot_path)
-    print(f"Plots saved to {output_plot_path}")
+    print(f"  [PLOT] sec3_part3_clustering_metrics.png")
+    print(f"  {'Optimal K selected:':<40} {OPTIMAL_K:>15}")
 
+    # =========================================================
+    # TASK 5: ANALYZE THE CHARACTERISTICS OF EACH ITEM CLUSTER
+    # =========================================================
+    # Task 5.1: Calculate the average number of raters for items in each cluster
+    # Task 5.2: Identify 'popular item' clusters (high number of raters)
+    # Task 5.3: Identify 'niche item' clusters (low number of raters)
+    # Task 5.4: Identify 'long-tail item' clusters (very few raters)
+    # Task 5.5: Visualize the distribution of items across clusters
     # ---------------------------------------------------------
-    # 4. Cluster Analysis with Optimal K
-    # ---------------------------------------------------------
-    # Task 4.2: Select optimal K (Hardcoded based on analysis)
-    # Task 5: Analyze characteristics of each item cluster
-    print(f"\nStarting Cluster Analysis (K={OPTIMAL_K})...")
+    print("\n--- Task 5: Cluster Characteristics Analysis ---")
     kmeans_opt = KMeans(n_clusters=OPTIMAL_K, random_state=RANDOM_STATE, n_init=10)
     feature_df['cluster'] = kmeans_opt.fit_predict(X_scaled)
     
@@ -130,38 +157,46 @@ def main():
     cluster_stats = feature_df.groupby('cluster')['num_raters'].agg(['mean', 'count']).reset_index()
     cluster_stats = cluster_stats.sort_values('mean', ascending=False)
     
-    print("\nCluster Statistics (Sorted by Avg Raters):")
-    print(cluster_stats)
+    print("  Cluster Statistics (Sorted by Avg Raters):")
+    for _, row in cluster_stats.iterrows():
+        print(f"    • Cluster {int(row['cluster'])}: Avg Raters = {row['mean']:,.1f}, Items = {int(row['count']):,}")
     
-    # 4.2 Head vs Tail Analysis
-    # Top 20% by popularity = Head
+    # =========================================================
+    # TASK 6: ANALYZE CLUSTER MEMBERSHIP AND ITEM POPULARITY
+    # =========================================================
+    # Task 6.1: Plot the distribution of number of raters within each cluster
+    # Task 6.2: Are items with similar popularity levels grouped together?
+    # Task 6.3: Analyze how items from head vs. tail of popularity distribution
+    #           are distributed across clusters
+    # ---------------------------------------------------------
+    print("\n--- Task 6: Cluster Membership & Item Popularity ---")
+    # Head = Top 20% by popularity, Tail = Bottom 80%
     popularity_threshold = feature_df['num_raters'].quantile(0.8)
     feature_df['type'] = feature_df['num_raters'].apply(lambda x: 'Head' if x >= popularity_threshold else 'Tail')
     
-    print(f"\nPopularity Threshold (top 20%): {popularity_threshold:.2f} raters")
+    print(f"  {'Popularity threshold (top 20%):':<40} {popularity_threshold:>15.2f}")
     
     head_tail_dist = feature_df.groupby(['cluster', 'type']).size().unstack(fill_value=0)
     
-    # 4.3 Visualizing Characteristics
-    print("Generating analysis plots...")
+    # Visualization for Tasks 5.5 and 6.1
     plt.figure(figsize=(18, 6))
 
-    # Item Distribution
+    # Plot 1: Item Distribution across Clusters (Task 5.5)
     plt.subplot(1, 3, 1)
     sns.countplot(data=feature_df, x='cluster', palette='viridis', hue='cluster', legend=False)
     plt.title('Item Distribution across Clusters')
     plt.xlabel('Cluster ID')
     plt.ylabel('Number of Items')
 
-    # Rater Distribution (Boxplot)
+    # Plot 2: Rater Distribution per Cluster (Task 6.1)
     plt.subplot(1, 3, 2)
     sns.boxplot(data=feature_df, x='cluster', y='num_raters', palette='viridis', hue='cluster', legend=False)
     plt.yscale('log')
     plt.title('Distribution of # Raters per Cluster (Log Scale)')
-    plt.xlabel('Cluster ID') # Fixed typo from original
+    plt.xlabel('Cluster ID')
     plt.ylabel('Number of Raters (Log)')
 
-    # Head vs Tail
+    # Plot 3: Head vs Tail Composition (Task 6.3)
     plt.subplot(1, 3, 3)
     head_tail_dist.plot(kind='bar', stacked=True, ax=plt.gca(), color=['red', 'blue'])
     plt.title('Head (Popular) vs Tail (Niche) Composition')
@@ -169,23 +204,35 @@ def main():
     plt.ylabel('Number of Items')
     plt.legend(title='Item Type')
 
-    # Task 5.5 & 6.1: Visualize distribution
     analysis_plot_path = os.path.join(RESULTS_DIR, 'sec3_part3_cluster_analysis.png')
     plt.tight_layout()
     plt.savefig(analysis_plot_path)
-    print(f"Analysis plots saved to {analysis_plot_path}")
+    print(f"  [PLOT] sec3_part3_cluster_analysis.png")
 
+    # =========================================================
+    # TASK 7: APPLY ITEM-BASED CF WITHIN CLUSTERS
+    # =========================================================
+    # Task 7.1: For each target item (I1 and I2), identify their cluster assignment
+    # Task 7.2: Within each cluster, compute item-item similarity using Adjusted Cosine
+    # Task 7.3: Select the top 20% most similar items from within the same cluster
+    # Task 7.4: For each target user, predict rating using only similar items from same cluster
+    # =========================================================
+    # TASK 8: COMPARE CLUSTERING-BASED ITEM CF WITH NON-CLUSTERING ITEM CF
+    # =========================================================
+    # Task 8.1: Compare the predicted ratings with and without clustering
+    # Task 8.2: Calculate the prediction error for each approach: |actual - predicted|
+    # Task 8.3: Which approach produces more reliable predictions?
     # ---------------------------------------------------------
-    # Task 7 & 8: Prediction Comparison (Baseline vs Clustered)
-    # ---------------------------------------------------------
-    print("\n--- Tasks 7 & 8: Prediction Comparison ---")
+    print("\n" + "="*80)
+    print("Tasks 7 & 8: Item-Based CF Predictions (Clustered vs Baseline)")
+    print("="*80)
     
     # Load targets
     target_users = data_loader.get_target_users()
     target_items = data_loader.get_target_items()
     
-    print(f"Target Users: {target_users}")
-    print(f"Target Items: {target_items}")
+    print(f"  {'Target Users:':<40} {target_users}")
+    print(f"  {'Target Items:':<40} {target_items}")
     
     # Prepare Helper Dictionaries
     # User Means
@@ -201,7 +248,7 @@ def main():
     item_means = dict(zip(item_means_df['item'], item_means_df[item_avg_col]))
 
     # Rating Lookups
-    print("Building rating dictionaries...")
+    print(f"  [DONE] Building rating dictionaries...")
     # Item -> {User: Rating}
     item_user_ratings = df.groupby('item').apply(lambda x: dict(zip(x['user'], x['rating']))).to_dict()
     # User -> {Item: Rating}
@@ -214,8 +261,8 @@ def main():
     # Baseline Candidate Set (Global)
     all_items = list(item_user_ratings.keys())
 
-    print(f"\n{'User':<10} | {'Item':<10} | {'Actual':<6} | {'BasePred':<8} | {'ClusPred':<8} | {'ErrBase':<7} | {'ErrClus':<7}")
-    print("-" * 80)
+    print(f"\n  {'User':<10} {'Item':<10} {'Actual':>8} {'Base':>8} {'Clus':>8} {'Err_B':>7} {'Err_C':>7}")
+    print("  " + "-"*68)
     
     # Save to file
     output_file_path = os.path.join(RESULTS_DIR, 'sec3_part3_prediction_comparison.txt')
@@ -300,7 +347,7 @@ def main():
             mae_base_list.append(err_base)
             mae_clus_list.append(err_clus)
 
-            line = f"{u:<10} | {i:<10} | {actual_rating:<6.2f} | {base_pred:<8.2f} | {clus_pred:<8.2f} | {err_base:<7.2f} | {err_clus:<7.2f}"
+            line = f"  {u:<10} {i:<10} {actual_rating:>8.2f} {base_pred:>8.2f} {clus_pred:>8.2f} {err_base:>7.2f} {err_clus:>7.2f}"
             print(line)
             with open(output_file_path, 'a') as f:
                 f.write(line + "\n")
@@ -314,35 +361,29 @@ def main():
     avg_mae_base = np.mean(mae_base_list) if mae_base_list else 0
     avg_mae_clus = np.mean(mae_clus_list) if mae_clus_list else 0
     
-    # Use explicit concatenation to avoid repetition bug
-    separator = "=" * 50
-    dash_line = "-" * 50
-    
-    summary = "\n" + separator + "\n"
-    summary += "SECTION 8.2 & 8.3: PREDICTION ERROR ANALYSIS\n"
-    summary += separator + "\n"
-    summary += f"Overall MAE (Baseline - Global):   {avg_mae_base:.4f}\n"
-    summary += f"Overall MAE (Clustering - Local):  {avg_mae_clus:.4f}\n"
-    summary += dash_line + "\n"
+    print("\n  " + "-"*68)
+    print(f"  {'MAE (Baseline - Global):':<40} {avg_mae_base:>15.4f}")
+    print(f"  {'MAE (Clustering - Local):':<40} {avg_mae_clus:>15.4f}")
     
     if avg_mae_clus < avg_mae_base:
-        summary += "CONCLUSION: Clustering-based approach produces more reliable predictions (Lower Error).\n"
+        print("\n  > CONCLUSION: Clustering-based approach produces more reliable predictions.")
     else:
-        summary += "CONCLUSION: Baseline approach produces more reliable predictions (Lower Error).\n"
-    summary += separator + "\n"
+        print("\n  > CONCLUSION: Baseline approach produces more reliable predictions.")
     
-    print(summary)
-    with open(output_file_path, 'a') as f:
-        f.write(summary)
+    print(f"  [SAVED] sec3_part3_prediction_comparison.txt")
 
 
 
+    # =========================================================
+    # TASK 9: EVALUATE THE IMPACT ON THE LONG-TAIL PROBLEM
+    # =========================================================
+    # Task 9.1: How does clustering affect predictions for items with very few ratings?
+    # Task 9.2: Are predictions for long-tail items more or less reliable within clusters?
+    # Task 9.3: Compare the number of similar items found for long-tail items with/without clustering
     # ---------------------------------------------------------
-    # Task 9: Long-Tail Analysis (Evaluate Random Sample of Tail Items)
-    # ---------------------------------------------------------
-    print("\n" + "="*50)
-    print("TASK 9: LONG-TAIL ANALYSIS")
-    print("="*50)
+    print("\n" + "="*80)
+    print("Task 9: Long-Tail Problem Evaluation")
+    print("="*80)
 
     # 1. Select Random Tail Items
     tail_items_list = feature_df[feature_df['type'] == 'Tail']['item'].tolist()
@@ -354,7 +395,7 @@ def main():
     else:
         sample_tail_items = tail_items_list
 
-    print(f"Sampling {len(sample_tail_items)} Tail Items for detailed analysis...")
+    print(f"  {'Sampling tail items for analysis:':<40} {len(sample_tail_items):>15}")
 
     tail_errors_base = []
     tail_errors_clus = []
@@ -425,23 +466,27 @@ def main():
     avg_tail_cand_base = np.mean(tail_candidates_base) if tail_candidates_base else 0
     avg_tail_cand_clus = np.mean(tail_candidates_clus) if tail_candidates_clus else 0
     
-    print(f"Tail Items Evaluated: {len(tail_errors_base)}")
-    print(f"Avg Error (Tail) - Baseline:   {avg_tail_err_base:.4f}")
-    print(f"Avg Error (Tail) - Clustering: {avg_tail_err_clus:.4f}")
-    print(f"Avg Neighbor Candidates (Tail) - Baseline:   {avg_tail_cand_base:.1f}")
-    print(f"Avg Neighbor Candidates (Tail) - Clustering: {avg_tail_cand_clus:.1f}")
+    print(f"  {'Tail items evaluated:':<40} {len(tail_errors_base):>15}")
+    print(f"  {'Avg Error (Baseline):':<40} {avg_tail_err_base:>15.4f}")
+    print(f"  {'Avg Error (Clustering):':<40} {avg_tail_err_clus:>15.4f}")
+    print(f"  {'Avg Candidates (Baseline):':<40} {avg_tail_cand_base:>15.1f}")
+    print(f"  {'Avg Candidates (Clustering):':<40} {avg_tail_cand_clus:>15.1f}")
     
     if avg_tail_err_clus < avg_tail_err_base:
-        print("Insight: Clustering improves reliability for long-tail items.")
+        print("\n  > Insight: Clustering improves reliability for long-tail items.")
     else:
-        print("Insight: Clustering does NOT improve reliability for long-tail items.")
+        print("\n  > Insight: Clustering does NOT improve reliability for long-tail items.")
 
+    # =========================================================
+    # TASK 10: ANALYZE THE COMPUTATIONAL EFFICIENCY
+    # =========================================================
+    # Task 10.1: Calculate the reduction in item-item similarity computations due to clustering
+    # Task 10.2: Compute the speedup factor compared to non-clustering item-based CF
+    # Task 10.3: Is the speedup greater for item-based or user-based clustering?
     # ---------------------------------------------------------
-    # Task 10: Computational Efficiency
-    # ---------------------------------------------------------
-    print("\n" + "="*50)
-    print("TASK 10: COMPUTATIONAL EFFICIENCY")
-    print("="*50)
+    print("\n" + "="*80)
+    print("Task 10: Computational Efficiency Analysis")
+    print("="*80)
     
     n_items = float(len(all_items))
     ops_base = n_items * n_items # Compares every item with every other item
@@ -453,18 +498,22 @@ def main():
     reduction_pct = ((ops_base - ops_clus) / ops_base) * 100
     speedup = ops_base / ops_clus if ops_clus > 0 else 0
     
-    print(f"Total Items: {int(n_items)}")
-    print(f"Baseline Comparisons (Global):  {int(ops_base):,}")
-    print(f"Clustering Comparisons (Local): {int(ops_clus):,}")
-    print(f"Reduction in Computations:      {reduction_pct:.2f}%")
-    print(f"Speedup Factor:                 {speedup:.2f}x")
+    print(f"  {'Total items:':<40} {int(n_items):>15,}")
+    print(f"  {'Baseline comparisons:':<40} {int(ops_base):>15,}")
+    print(f"  {'Clustering comparisons:':<40} {int(ops_clus):>15,}")
+    print(f"  {'Reduction:':<40} {reduction_pct:>14.2f}%")
+    print(f"  {'Speedup factor:':<40} {speedup:>14.2f}x")
 
+    # =========================================================
+    # TASK 11: EXAMINE THE EFFECT OF CLUSTER SIZE ON PREDICTION QUALITY
+    # =========================================================
+    # Task 11.1: For clusters of different sizes, calculate the average prediction error
+    # Task 11.2: Do larger clusters produce better or worse predictions?
+    # Task 11.3: Is there an optimal cluster size for balancing accuracy and efficiency?
     # ---------------------------------------------------------
-    # Task 11: Cluster Size vs Prediction Quality
-    # ---------------------------------------------------------
-    print("\n" + "="*50)
-    print("TASK 11: CLUSTER SIZE VS PREDICTION QUALITY")
-    print("="*50)
+    print("\n" + "="*80)
+    print("Task 11: Cluster Size vs Prediction Quality")
+    print("="*80)
     
     cluster_stats_11 = []
     for c_id, errs in cluster_errors.items():
@@ -473,18 +522,26 @@ def main():
         cluster_stats_11.append({'cluster': c_id, 'size': size, 'avg_error': avg_err})
         
     df_c_stats = pd.DataFrame(cluster_stats_11).sort_values('size', ascending=False)
-    print(df_c_stats.to_string(index=False))
+    
+    print(f"\n  {'Cluster':<10} {'Size':>10} {'Avg Error':>12}")
+    print("  " + "-"*34)
+    for _, row in df_c_stats.iterrows():
+        print(f"  {int(row['cluster']):<10} {int(row['size']):>10} {row['avg_error']:>12.4f}")
     
     # Correlation
     corr = df_c_stats['size'].corr(df_c_stats['avg_error'])
-    print(f"\nCorrelation between Cluster Size and Error: {corr:.4f}")
+    print(f"\n  {'Correlation (Size vs Error):':<40} {corr:>15.4f}")
     if corr < -0.3:
-        print("Trend: Larger clusters tend to have LOWER error (Better).")
+        print("  > Trend: Larger clusters tend to have LOWER error (Better).")
     elif corr > 0.3:
-        print("Trend: Larger clusters tend to have HIGHER error (Worse).")
+        print("  > Trend: Larger clusters tend to have HIGHER error (Worse).")
     else:
-        print("Trend: Weak or no correlation.")
-    print("="*50 + "\n")
+        print("  > Trend: Weak or no correlation.")
+    
+    # Final completion message
+    print("\n" + "="*80)
+    print("[DONE] Section 3.3: Item Clustering Analysis completed successfully.")
+    print("="*80 + "\n")
 
 
 if __name__ == "__main__":

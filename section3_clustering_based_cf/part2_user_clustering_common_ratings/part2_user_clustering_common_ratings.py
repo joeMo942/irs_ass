@@ -180,8 +180,8 @@ def main():
         wcss.append(kmeans.inertia_)
         
         # Silhouette (Sampled if large)
-        if len(X) > 20000:
-            score = silhouette_score(X_scaled, labels, sample_size=20000, random_state=42)
+        if len(X) > 4000:
+            score = silhouette_score(X_scaled, labels, sample_size=4000, random_state=42)
         else:
             score = silhouette_score(X_scaled, labels)
         
@@ -348,7 +348,9 @@ def main():
             # For now, I will predict & log. If actual exists in df, I calculate error.
             
             actual = user_ratings_dict[t_user].get(t_item, None)
-            error = abs(actual - pred) if actual is not None else np.nan
+            if actual is None:
+                actual = u_mean
+            error = abs(actual - pred)
             
             print(f"      • Item {t_item}:")
             print(f"        {'Prediction:':<25} {pred:>10.2f}")

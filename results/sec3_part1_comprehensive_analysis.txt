@@ -1,0 +1,50 @@
+================================================================================
+SECTION 3 PART 1: COMPREHENSIVE ANALYSIS AND INSIGHTS
+K-means Clustering Based on Average User Ratings
+================================================================================
+
+--------------------------------------------------------------------------------
+14.1. EFFECTIVENESS OF CLUSTERING BASED ON AVERAGE USER RATINGS
+--------------------------------------------------------------------------------
+- Number of clusters (Optimal K): 10
+- Global mean of average ratings (mu): 3.74
+- Standard deviation of average ratings (sigma): 0.82
+- Best Silhouette Score achieved: 0.79 at K=50
+
+--------------------------------------------------------------------------------
+14.2. TRADE-OFF BETWEEN PREDICTION ACCURACY AND COMPUTATIONAL EFFICIENCY
+--------------------------------------------------------------------------------
+- Similarity computations (Baseline): 443,739
+- Similarity computations (Clustering): 59,200
+- Speedup Factor: 7.50x
+- Efficiency Gain: 86.66%
+- Average Prediction Difference: 0.21
+- Maximum Prediction Difference: 0.69
+
+
+--------------------------------------------------------------------------------
+14.3. SUITABILITY FOR DATASET CHARACTERISTICS
+--------------------------------------------------------------------------------
+- Total number of users: 147914
+- Cluster imbalance ratio (Max/Min): 10.00
+- Average cluster size: 14791.40
+- Cluster size standard deviation: 10111.88
+
+
+--------------------------------------------------------------------------------
+14.4. HOW THE CHOICE OF K AFFECTS ACCURACY AND EFFICIENCY
+--------------------------------------------------------------------------------
+K Value Analysis:
+  K= 5: WCSS=8,784.42, Silhouette=0.62, Avg Cluster Size=29582.80
+  K=10: WCSS=1,323.45, Silhouette=0.69, Avg Cluster Size=14791.40
+  K=15: WCSS=481.67, Silhouette=0.72, Avg Cluster Size=9860.93
+  K=20: WCSS=227.98, Silhouette=0.74, Avg Cluster Size=7395.70
+  K=30: WCSS=83.57, Silhouette=0.76, Avg Cluster Size=4930.47
+  K=50: WCSS=25.30, Silhouette=0.79, Avg Cluster Size=2958.28
+
+--------------------------------------------------------------------------------
+CLUSTERING ROBUSTNESS SUMMARY
+--------------------------------------------------------------------------------
+- Clustering Stability: STABLE
+- Inertia Standard Deviation across runs: 9.43
+- The K-means clustering produces consistent results across different initializations.

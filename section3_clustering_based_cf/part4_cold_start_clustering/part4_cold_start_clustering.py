@@ -1774,7 +1774,6 @@ def main():
         f.write("="*70 + "\n")
         f.write("TASK 15: SUMMARY AND INSIGHTS\n")
         f.write("="*70 + "\n")
-        f.write(summary)
     
     print(f"\n  [SAVED] {os.path.basename(summary_path)}")
     print("\n" + "="*80)

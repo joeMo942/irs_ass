@@ -1,0 +1,173 @@
+======================================================================
+PART 4: K-MEANS CLUSTERING FOR COLD-START PROBLEM
+======================================================================
+
+Dataset: 2149655 ratings, 147914 users, 11123 items
+User clusters: 10 clusters
+Item clusters: 10 clusters
+
+============================================================
+TASK 1: SIMULATING COLD-START SCENARIOS
+============================================================
+Selected 100 cold-start users
+Average visible ratings per user: 15.01
+Average hidden ratings per user: 80.29
+Selected 50 cold-start items
+Average visible ratings per item: 8.84
+Average hidden ratings per item: 216.52
+
+============================================================
+TASKS 2-4: COLD-START USER ASSIGNMENT & RECOMMENDATIONS
+============================================================
+Clustering-Based Cold-Start User Results:
+  MAE: 0.60
+  RMSE: 0.79
+  Avg Precision@10: 0.01
+  Avg Recall@10: 0.00
+
+--------------------------------------------------
+BASELINE (NO CLUSTERING) FOR COLD-START USERS
+--------------------------------------------------
+  Baseline MAE: 0.59
+  Baseline RMSE: 0.75
+
+Comparison: Clustering MAE=0.60 vs Baseline MAE=0.59
+
+============================================================
+TASKS 5-7: COLD-START ITEM ASSIGNMENT & PREDICTIONS
+============================================================
+Clustering-Based Cold-Start Item Results:
+  MAE: 0.63
+  RMSE: 0.84
+
+Item Cluster Assignments (sample):
+Item ID    | Cluster  | d_nearest  | d_second   | Confidence
+-------------------------------------------------------
+5807       | 4        | 1.40       | 2.11       | 0.34      
+7147       | 8        | 1.06       | 2.09       | 0.49      
+1162       | 0        | 1.04       | 1.06       | 0.02      
+5541       | 0        | 0.44       | 1.29       | 0.66      
+6588       | 9        | 1.45       | 1.92       | 0.24      
+5626       | 0        | 0.57       | 1.11       | 0.48      
+4852       | 0        | 0.48       | 1.23       | 0.61      
+7190       | 0        | 0.42       | 0.98       | 0.57      
+5444       | 8        | 0.69       | 0.74       | 0.07      
+3399       | 7        | 1.28       | 1.48       | 0.14      
+
+--------------------------------------------------
+TASK 7.3: BASELINE (NO CLUSTERING) FOR COLD-START ITEMS
+--------------------------------------------------
+  Baseline MAE: 0.69
+  Baseline RMSE: 0.93
+
+Comparison: Clustering MAE=0.63 vs Baseline MAE=0.69
+
+============================================================
+TASK 8: RATING COUNT VS PREDICTION ACCURACY
+============================================================
+  5 ratings: MAE = 0.63
+  10 ratings: MAE = 0.63
+  15 ratings: MAE = 0.60
+  20 ratings: MAE = 0.61
+
+Plot saved to: /home/yousef/irs_ass/results/sec3_part4_rating_count_accuracy.png
+Improvement rates: ['1.33%', '3.60%', '-1.20%']
+Suggested transition from 'cold-start' at ~15 ratings
+
+============================================================
+TASK 11: CLUSTER ASSIGNMENT CONFIDENCE ANALYSIS
+============================================================
+Total assignments: 100
+Confident (ratio < 0.5): 67 (67.00%)
+Ambiguous (ratio > 0.7): 19 (19.00%)
+
+Ambiguous Assignment Examples:
+  User 141661: ratio=0.84
+  User 110083: ratio=0.84
+  User 44156: ratio=0.89
+  User 18012: ratio=0.84
+  User 15814: ratio=0.84
+
+Proposed strategies for ambiguous cases:
+  1. Multi-cluster membership: Assign to top-2 clusters with weighted predictions
+  2. Weighted recommendations: Weight by inverse distance to each centroid
+  3. Ensemble: Combine predictions from multiple cluster assignments
+
+============================================================
+TASK 12: COMPARING COLD-START STRATEGIES
+============================================================
+
+Strategy             | MAE      | RMSE    
+---------------------------------------------
+Cluster-based CF     | 0.57     | 0.77    
+Global CF            | 0.62     | 0.83    
+Popularity-based     | 0.53     | 0.72    
+
+============================================================
+TASK 13: CLUSTER GRANULARITY ANALYSIS
+============================================================
+  K=5: MAE=0.61, Avg Cluster Size~4.00
+  K=10: MAE=0.62, Avg Cluster Size~2.00
+  K=20: MAE=0.66, Avg Cluster Size~1.00
+  K=50: MAE=0.69, Avg Cluster Size~0.40
+
+Discussion:
+  - Smaller K (larger clusters): More neighbors, but less homogeneous
+  - Larger K (smaller clusters): More specific, but may lack data
+  - Best performing K: 5
+
+============================================================
+TASK 9: HYBRID COLD-START STRATEGY
+============================================================
+  Method               | MAE      | RMSE    
+---------------------------------------------
+  Clustering Only      | 0.58     | 0.78    
+  Hybrid (CF+Content)  | 0.58     | 0.75    
+
+  Improvement from hybrid: -0.21%
+  Conclusion: Clustering-only performs better for this dataset
+
+============================================================
+TASK 10: COLD-START ROBUSTNESS TESTING
+============================================================
+   3 ratings: MAE = 0.70, Avg predictions = 35.36
+   5 ratings: MAE = 0.63, Avg predictions = 42.92
+  10 ratings: MAE = 0.63, Avg predictions = 58.00
+  20 ratings: MAE = 0.61, Avg predictions = 60.07
+
+  Acceptable threshold (within 20%): 0.73
+  Minimum ratings for acceptable quality: 3
+
+Plot saved to: /home/yousef/irs_ass/results/sec3_part4_robustness_test.png
+
+============================================================
+TASK 14: CONFIDENCE-BASED RECOMMENDATION STRATEGY
+============================================================
+  High-confidence predictions: 1464
+  Low-confidence predictions: 379
+  MAE (high-conf only): 0.61
+  MAE (low-conf only): 0.68
+  MAE (all): 0.62
+
+  Filtering low-confidence improves MAE by: 2.29%
+Key insight: Filtering low-confidence predictions can improve overall MAE.
+
+--------------------------------------------------
+TASK 14 (ENHANCED): WITH ALL 3 CONFIDENCE FACTORS
+--------------------------------------------------
+Confidence Factors Used:
+  a. Cluster assignment confidence
+  b. Number of similar users found
+  c. Agreement among similar users (rating std)
+
+  High-confidence predictions: 1832
+  Low-confidence predictions: 11
+  MAE (high-conf only): 0.62
+  MAE (low-conf only): 0.78
+  MAE (all): 0.62
+
+  Filtering low-confidence improves MAE by: 0.16%
+
+======================================================================
+TASK 15: SUMMARY AND INSIGHTS
+======================================================================

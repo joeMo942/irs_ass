@@ -16,8 +16,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DATASET_PATH = os.path.join(PROJECT_ROOT, 'dataset', 'Dianping_SocialRec_2015', 'preprocessed_data.csv')
 TARGET_USERS_PATH = os.path.join(PROJECT_ROOT, 'results', 'target_users.txt')
 TARGET_ITEMS_PATH = os.path.join(PROJECT_ROOT, 'results', 'target_items.txt')
-USER_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'Sec1_r_u.csv')
-ITEM_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'Sec1_r_i.csv')
+USER_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'sec1_r_u.csv')
+ITEM_AVG_RATINGS_PATH = os.path.join(PROJECT_ROOT, 'results', 'sec1_r_i.csv')
 
 def get_preprocessed_dataset():
     """

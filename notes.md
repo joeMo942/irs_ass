@@ -3,6 +3,7 @@
 ## sec3.2.6 abosrewa (discount factor)
 ## sec3.2.7 abosrewa
 ## sec3.2.8 abosrewa
+## sec3.2.10 abosrewa
 
 Please review the implementation plan for the Output Style Guide. It includes:
 

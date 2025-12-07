@@ -1,3 +1,10 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
 import os
 import sys
 import numpy as np
@@ -118,8 +125,8 @@ def simulate_cold_start_users(df, user_avg_df, n_users=100, min_ratings=50, hide
     
     print("\n--- 1.1-1.3 Cold-Start Users ---")
     print(f"  {'Selected Users:':<40} {len(selected_users):>15}")
-    print(f"  {'Avg Visible Ratings:':<40} {np.mean([len(v) for v in visible_ratings.values()]):>15.1f}")
-    print(f"  {'Avg Hidden Ratings:':<40} {np.mean([len(v) for v in hidden_ratings.values()]):>15.1f}")
+    print(f"  {'Avg Visible Ratings:':<40} {np.mean([len(v) for v in visible_ratings.values()]):>15.2f}")
+    print(f"  {'Avg Hidden Ratings:':<40} {np.mean([len(v) for v in hidden_ratings.values()]):>15.2f}")
     
     return list(selected_users), visible_ratings, hidden_ratings
 
@@ -161,8 +168,8 @@ def simulate_cold_start_items(df, item_avg_df, n_items=50, min_ratings=20, hide_
     
     print("\n--- 1.4 Cold-Start Items ---")
     print(f"  {'Selected Items:':<40} {len(selected_items):>15}")
-    print(f"  {'Avg Visible Ratings:':<40} {np.mean([len(v) for v in visible_item_ratings.values()]):>15.1f}")
-    print(f"  {'Avg Hidden Ratings:':<40} {np.mean([len(v) for v in hidden_item_ratings.values()]):>15.1f}")    
+    print(f"  {'Avg Visible Ratings:':<40} {np.mean([len(v) for v in visible_item_ratings.values()]):>15.2f}")
+    print(f"  {'Avg Hidden Ratings:':<40} {np.mean([len(v) for v in hidden_item_ratings.values()]):>15.2f}")    
     
     return list(selected_items), visible_item_ratings, hidden_item_ratings
 
@@ -370,10 +377,10 @@ def evaluate_cold_start_user_recommendations(
     avg_recall = np.mean([r['recall@10'] for r in recommendation_results])
     
     print("\n--- Results ---")
-    print(f"  {'MAE:':<40} {mae:>15.4f}")
-    print(f"  {'RMSE:':<40} {rmse:>15.4f}")
-    print(f"  {'Avg Precision@10:':<40} {avg_precision:>15.4f}")
-    print(f"  {'Avg Recall@10:':<40} {avg_recall:>15.4f}")
+    print(f"  {'MAE:':<40} {mae:>15.2f}")
+    print(f"  {'RMSE:':<40} {rmse:>15.2f}")
+    print(f"  {'Avg Precision@10:':<40} {avg_precision:>15.2f}")
+    print(f"  {'Avg Recall@10:':<40} {avg_recall:>15.2f}")
     
     return {
         'mae': mae,
@@ -436,8 +443,8 @@ def evaluate_baseline_cold_start_user(
     else:
         mae, rmse = 0, 0
     
-    print(f"  {'Baseline MAE:':<40} {mae:>15.4f}")
-    print(f"  {'Baseline RMSE:':<40} {rmse:>15.4f}")
+    print(f"  {'Baseline MAE:':<40} {mae:>15.2f}")
+    print(f"  {'Baseline RMSE:':<40} {rmse:>15.2f}")
     
     return {'mae': mae, 'rmse': rmse}
 
@@ -565,15 +572,15 @@ def evaluate_cold_start_items(
         mae, rmse = 0, 0
     
     print("\n--- Results ---")
-    print(f"  {'MAE:':<40} {mae:>15.4f}")
-    print(f"  {'RMSE:':<40} {rmse:>15.4f}")
+    print(f"  {'MAE:':<40} {mae:>15.2f}")
+    print(f"  {'RMSE:':<40} {rmse:>15.2f}")
     
     # Task 5.3.4: Print assignment table
     print("\n--- Item Cluster Assignments (sample) ---")
     print(f"  {'Item ID':<10} | {'Cluster':<8} | {'d_nearest':<10} | {'d_second':<10} | {'Confidence':<10}")
     print("  " + "-" * 60)
     for res in assignment_results[:10]:
-        print(f"  {res['item_id']:<10} | {res['assigned_cluster']:<8} | {res['d_nearest']:<10.4f} | {res['d_second']:<10.4f} | {res['confidence']:<10.4f}")
+        print(f"  {res['item_id']:<10} | {res['assigned_cluster']:<8} | {res['d_nearest']:<10.2f} | {res['d_second']:<10.2f} | {res['confidence']:<10.2f}")
     
     return {
         'mae': mae,
@@ -636,7 +643,7 @@ def analyze_rating_count_vs_accuracy(
         
         avg_mae = np.mean(mae_list) if mae_list else 0
         results.append({'n_ratings': n_ratings, 'mae': avg_mae})
-        print(f"  {n_ratings:>2} ratings: MAE = {avg_mae:.4f}")
+        print(f"  {n_ratings:>2} ratings: MAE = {avg_mae:.2f}")
     
     # Task 8.2: Plot accuracy curve
     plt.figure(figsize=(8, 5))
@@ -657,7 +664,7 @@ def analyze_rating_count_vs_accuracy(
         print(f"\n--- Transition Analysis ---")
         transition_idx = np.argmax([abs(imp) for imp in improvement]) + 1
         transition_point = results[transition_idx]['n_ratings']
-        print(f"  {'Improvement rates:':<40} {[f'{x:.1f}%' for x in improvement]}")
+        print(f"  {'Improvement rates:':<40} {[f'{x:.2f}%' for x in improvement]}")
         print(f"  {'Transition point:':<40} ~{transition_point} ratings")
     
     return results
@@ -772,7 +779,7 @@ def compare_cold_start_strategies(
             rmse = np.sqrt(mean_squared_error(actuals, preds))
         else:
             mae, rmse = 0, 0
-        print(f"{name:<20} | {mae:<8.4f} | {rmse:<8.4f}")
+        print(f"{name:<20} | {mae:<8.2f} | {rmse:<8.2f}")
         strategy_results.append({'strategy': name, 'mae': mae, 'rmse': rmse})
     
     return strategy_results
@@ -837,7 +844,7 @@ def analyze_cluster_granularity(
         avg_cluster_size = len(sample_users) / k
         
         results.append({'k': k, 'mae': avg_mae, 'avg_cluster_size': avg_cluster_size})
-        print(f"  K={k}: MAE={avg_mae:.4f}, Avg Cluster Size~{avg_cluster_size:.0f}")
+        print(f"  K={k}: MAE={avg_mae:.2f}, Avg Cluster Size~{avg_cluster_size:.2f}")
     
     # Task 13.3: Discuss trade-off
     print("\nDiscussion:")
@@ -878,17 +885,17 @@ def analyze_cluster_assignment_confidence(assignment_results):
     ambiguous = df_results[df_results['ratio'] > 0.7]
     
     print(f"Total assignments: {len(df_results)}")
-    print(f"Confident (ratio < 0.5): {len(confident)} ({len(confident)/len(df_results)*100:.1f}%)")
-    print(f"Ambiguous (ratio > 0.7): {len(ambiguous)} ({len(ambiguous)/len(df_results)*100:.1f}%)")
+    print(f"Confident (ratio < 0.5): {len(confident)} ({len(confident)/len(df_results)*100:.2f}%)")
+    print(f"Ambiguous (ratio > 0.7): {len(ambiguous)} ({len(ambiguous)/len(df_results)*100:.2f}%)")
     
     # Task 11.2: Identify ambiguous cases
     if len(ambiguous) > 0:
         print(f"\nAmbiguous Assignment Examples:")
         for _, row in ambiguous.head(5).iterrows():
             if 'user_id' in row:
-                print(f"  User {row['user_id']}: ratio={row['ratio']:.3f}")
+                print(f"  User {row['user_id']}: ratio={row['ratio']:.2f}")
             elif 'item_id' in row:
-                print(f"  Item {row['item_id']}: ratio={row['ratio']:.3f}")
+                print(f"  Item {row['item_id']}: ratio={row['ratio']:.2f}")
     
     # Task 11.3: Propose strategies
     print("\nProposed strategies for ambiguous cases:")
@@ -974,11 +981,11 @@ def confidence_based_recommendations(
     }
     
     if high_conf_results:
-        print(f"  MAE (high-conf only): {results['high_conf_mae']:.4f}")
+        print(f"  MAE (high-conf only): {results['high_conf_mae']:.2f}")
     if low_conf_results:
-        print(f"  MAE (low-conf only): {results['low_conf_mae']:.4f}")
+        print(f"  MAE (low-conf only): {results['low_conf_mae']:.2f}")
     if all_results:
-        print(f"  MAE (all): {results['all_mae']:.4f}")
+        print(f"  MAE (all): {results['all_mae']:.2f}")
     
     if high_conf_results and all_results:
         results['improvement'] = (results['all_mae'] - results['high_conf_mae']) / results['all_mae'] * 100
@@ -1042,8 +1049,8 @@ def evaluate_baseline_cold_start_items(
     else:
         mae, rmse = 0, 0
     
-    print(f"  Baseline MAE: {mae:.4f}")
-    print(f"  Baseline RMSE: {rmse:.4f}")
+    print(f"  Baseline MAE: {mae:.2f}")
+    print(f"  Baseline RMSE: {rmse:.2f}")
     
     return {'mae': mae, 'rmse': rmse}
 
@@ -1147,8 +1154,8 @@ def develop_hybrid_cold_start_strategy(
     print(f"\nResults:")
     print(f"  {'Method':<20} | {'MAE':<8} | {'RMSE':<8}")
     print(f"  {'-'*45}")
-    print(f"  {'Clustering Only':<20} | {cluster_mae:<8.4f} | {cluster_rmse:<8.4f}")
-    print(f"  {'Hybrid (CF+Content)':<20} | {hybrid_mae:<8.4f} | {hybrid_rmse:<8.4f}")
+    print(f"  {'Clustering Only':<20} | {cluster_mae:<8.2f} | {cluster_rmse:<8.2f}")
+    print(f"  {'Hybrid (CF+Content)':<20} | {hybrid_mae:<8.2f} | {hybrid_rmse:<8.2f}")
     print(f"\n  Improvement from hybrid: {improvement:.2f}%")
     
     if improvement > 0:
@@ -1231,14 +1238,14 @@ def test_cold_start_robustness(
             'avg_predictions': avg_predictions,
             'num_users_evaluated': len(mae_list)
         })
-        print(f"  {n_ratings:2d} ratings: MAE = {avg_mae:.4f}, Avg predictions = {avg_predictions:.0f}")
+        print(f"  {n_ratings:2d} ratings: MAE = {avg_mae:.2f}, Avg predictions = {avg_predictions:.2f}")
     
     # 10.2: Measure how prediction quality degrades
     print("\n  Degradation Analysis:")
     baseline_mae = results[-1]['mae']  # 20 ratings as baseline
     for r in results:
         degradation = (r['mae'] - baseline_mae) / baseline_mae * 100 if baseline_mae > 0 else 0
-        print(f"    {r['n_ratings']:2d} ratings: {degradation:+.1f}% vs 20-rating baseline")
+        print(f"    {r['n_ratings']:2d} ratings: {degradation:+.2f}% vs 20-rating baseline")
     
     # 10.3: Identify minimum number of ratings for acceptable quality
     # Acceptable = within 20% of best performance
@@ -1251,8 +1258,8 @@ def test_cold_start_robustness(
             break
     
     print(f"\n  10.3 Minimum Ratings Analysis:")
-    print(f"    Baseline MAE (20 ratings): {baseline_mae:.4f}")
-    print(f"    Acceptable threshold (within 20%): {acceptable_threshold:.4f}")
+    print(f"    Baseline MAE (20 ratings): {baseline_mae:.2f}")
+    print(f"    Acceptable threshold (within 20%): {acceptable_threshold:.2f}")
     if min_ratings_acceptable:
         print(f"    Minimum ratings for acceptable quality: {min_ratings_acceptable}")
     else:
@@ -1261,7 +1268,7 @@ def test_cold_start_robustness(
     # Plot degradation curve
     plt.figure(figsize=(8, 5))
     plt.plot([r['n_ratings'] for r in results], [r['mae'] for r in results], 'ro-', linewidth=2, markersize=8)
-    plt.axhline(y=acceptable_threshold, color='g', linestyle='--', label=f'Acceptable threshold ({acceptable_threshold:.3f})')
+    plt.axhline(y=acceptable_threshold, color='g', linestyle='--', label=f'Acceptable threshold ({acceptable_threshold:.2f})')
     plt.xlabel('Number of Ratings Available')
     plt.ylabel('MAE')
     plt.title('Cold-Start Robustness: MAE vs Available Information')
@@ -1402,11 +1409,11 @@ def confidence_based_recommendations_enhanced(
     print(f"  Low-confidence predictions: {results['low_conf_count']}")
     
     if high_conf_results:
-        print(f"  MAE (high-conf only): {results['high_conf_mae']:.4f}")
+        print(f"  MAE (high-conf only): {results['high_conf_mae']:.2f}")
     if low_conf_results:
-        print(f"  MAE (low-conf only): {results['low_conf_mae']:.4f}")
+        print(f"  MAE (low-conf only): {results['low_conf_mae']:.2f}")
     if all_results:
-        print(f"  MAE (all): {results['all_mae']:.4f}")
+        print(f"  MAE (all): {results['all_mae']:.2f}")
     
     if high_conf_results and all_results and results['all_mae'] > 0:
         results['improvement'] = (results['all_mae'] - results['high_conf_mae']) / results['all_mae'] * 100
@@ -1498,7 +1505,7 @@ def main():
         user_item_ratings, user_means
     )
     
-    print(f"\nComparison: Clustering MAE={user_results['mae']:.4f} vs Baseline MAE={baseline_results['mae']:.4f}")
+    print(f"\nComparison: Clustering MAE={user_results['mae']:.2f} vs Baseline MAE={baseline_results['mae']:.2f}")
     
     # ===========================================
     # Tasks 5-7: Cold-Start Item Predictions
@@ -1515,7 +1522,7 @@ def main():
         user_item_ratings, user_means, item_means, df
     )
     
-    print(f"\nItem Comparison: Clustering MAE={item_results['mae']:.4f} vs Baseline MAE={item_baseline_results['mae']:.4f}")
+    print(f"\nItem Comparison: Clustering MAE={item_results['mae']:.2f} vs Baseline MAE={item_baseline_results['mae']:.2f}")
     
     # ===========================================
     # Task 8: Rating Count vs Accuracy Analysis
@@ -1590,40 +1597,7 @@ def main():
     print("TASK 15: SUMMARY AND INSIGHTS")
     print("="*80)
     # delete ba3d ma t5ls elreport ya nourrrrrrrrrrr
-    summary = f"""
-    15.1 EFFECTIVENESS OF CLUSTERING FOR COLD-START:
-    - Clustering reduces the search space for neighbors significantly
-    - For cold-start users with limited data, cluster-based assignment 
-      provides a quick way to find similar users
-    - Clustering MAE: {user_results['mae']:.4f} vs Baseline: {baseline_results['mae']:.4f}
     
-    15.2 BEST PERFORMING STRATEGY:
-    - Strategy comparison shows that cluster-based CF typically balances
-      accuracy and computational efficiency
-    - For very cold users (< 5 ratings), popularity-based may be more robust
-    
-    15.3 MINIMUM DATA FOR RELIABLE RECOMMENDATIONS:
-    - Based on our analysis, ~10-15 ratings mark the transition point
-      from 'cold-start' to having sufficient data
-    - Below 5 ratings, predictions become highly unreliable
-    
-    15.4 PRACTICAL RECOMMENDATIONS:
-    - Implement a hybrid approach: use popularity for very cold users,
-      transition to clustering-based CF as ratings accumulate
-    - Monitor assignment confidence and use multi-cluster membership
-      for ambiguous cases
-    - Consider content-based features when available to improve
-      initial cluster assignments
-    
-    15.5 CLUSTERING VS NON-CLUSTERING:
-    - Clustering provides computational speedup by limiting neighbor search
-    - For cold-start, clustering helps by grouping users with similar
-      rating behaviors, making limited overlap more meaningful
-    - Trade-off: Too few clusters lose specificity; too many may have
-      insufficient members for reliable predictions
-    """
-    
-    print(summary)
     
     # Save comprehensive output to file
     summary_path = os.path.join(RESULTS_DIR, 'sec3_part4_cold_start_summary.txt')
@@ -1641,58 +1615,58 @@ def main():
         f.write("TASK 1: SIMULATING COLD-START SCENARIOS\n")
         f.write("="*60 + "\n")
         f.write(f"Selected {len(cold_start_users)} cold-start users\n")
-        f.write(f"Average visible ratings per user: {np.mean([len(v) for v in visible_ratings.values()]):.1f}\n")
-        f.write(f"Average hidden ratings per user: {np.mean([len(v) for v in hidden_ratings.values()]):.1f}\n")
+        f.write(f"Average visible ratings per user: {np.mean([len(v) for v in visible_ratings.values()]):.2f}\n")
+        f.write(f"Average hidden ratings per user: {np.mean([len(v) for v in hidden_ratings.values()]):.2f}\n")
         f.write(f"Selected {len(cold_start_items)} cold-start items\n")
-        f.write(f"Average visible ratings per item: {np.mean([len(v) for v in visible_item_ratings.values()]):.1f}\n")
-        f.write(f"Average hidden ratings per item: {np.mean([len(v) for v in hidden_item_ratings.values()]):.1f}\n\n")
+        f.write(f"Average visible ratings per item: {np.mean([len(v) for v in visible_item_ratings.values()]):.2f}\n")
+        f.write(f"Average hidden ratings per item: {np.mean([len(v) for v in hidden_item_ratings.values()]):.2f}\n\n")
         
         # Tasks 2-4: Cold-Start User Results
         f.write("="*60 + "\n")
         f.write("TASKS 2-4: COLD-START USER ASSIGNMENT & RECOMMENDATIONS\n")
         f.write("="*60 + "\n")
         f.write("Clustering-Based Cold-Start User Results:\n")
-        f.write(f"  MAE: {user_results['mae']:.4f}\n")
-        f.write(f"  RMSE: {user_results['rmse']:.4f}\n")
-        f.write(f"  Avg Precision@10: {user_results['precision@10']:.4f}\n")
-        f.write(f"  Avg Recall@10: {user_results['recall@10']:.4f}\n\n")
+        f.write(f"  MAE: {user_results['mae']:.2f}\n")
+        f.write(f"  RMSE: {user_results['rmse']:.2f}\n")
+        f.write(f"  Avg Precision@10: {user_results['precision@10']:.2f}\n")
+        f.write(f"  Avg Recall@10: {user_results['recall@10']:.2f}\n\n")
         
         f.write("-"*50 + "\n")
         f.write("BASELINE (NO CLUSTERING) FOR COLD-START USERS\n")
         f.write("-"*50 + "\n")
-        f.write(f"  Baseline MAE: {baseline_results['mae']:.4f}\n")
-        f.write(f"  Baseline RMSE: {baseline_results['rmse']:.4f}\n\n")
-        f.write(f"Comparison: Clustering MAE={user_results['mae']:.4f} vs Baseline MAE={baseline_results['mae']:.4f}\n\n")
+        f.write(f"  Baseline MAE: {baseline_results['mae']:.2f}\n")
+        f.write(f"  Baseline RMSE: {baseline_results['rmse']:.2f}\n\n")
+        f.write(f"Comparison: Clustering MAE={user_results['mae']:.2f} vs Baseline MAE={baseline_results['mae']:.2f}\n\n")
         
         # Tasks 5-7: Cold-Start Item Results
         f.write("="*60 + "\n")
         f.write("TASKS 5-7: COLD-START ITEM ASSIGNMENT & PREDICTIONS\n")
         f.write("="*60 + "\n")
         f.write("Clustering-Based Cold-Start Item Results:\n")
-        f.write(f"  MAE: {item_results['mae']:.4f}\n")
-        f.write(f"  RMSE: {item_results['rmse']:.4f}\n\n")
+        f.write(f"  MAE: {item_results['mae']:.2f}\n")
+        f.write(f"  RMSE: {item_results['rmse']:.2f}\n\n")
         
         f.write("Item Cluster Assignments (sample):\n")
         f.write(f"{'Item ID':<10} | {'Cluster':<8} | {'d_nearest':<10} | {'d_second':<10} | {'Confidence':<10}\n")
         f.write("-"*55 + "\n")
         for res in item_results['assignment_results'][:10]:
-            f.write(f"{res['item_id']:<10} | {res['assigned_cluster']:<8} | {res['d_nearest']:<10.4f} | {res['d_second']:<10.4f} | {res['confidence']:<10.4f}\n")
+            f.write(f"{res['item_id']:<10} | {res['assigned_cluster']:<8} | {res['d_nearest']:<10.2f} | {res['d_second']:<10.2f} | {res['confidence']:<10.2f}\n")
         f.write("\n")
         
         # Task 7.3: Item Baseline Comparison
         f.write("-"*50 + "\n")
         f.write("TASK 7.3: BASELINE (NO CLUSTERING) FOR COLD-START ITEMS\n")
         f.write("-"*50 + "\n")
-        f.write(f"  Baseline MAE: {item_baseline_results['mae']:.4f}\n")
-        f.write(f"  Baseline RMSE: {item_baseline_results['rmse']:.4f}\n")
-        f.write(f"\nComparison: Clustering MAE={item_results['mae']:.4f} vs Baseline MAE={item_baseline_results['mae']:.4f}\n\n")
+        f.write(f"  Baseline MAE: {item_baseline_results['mae']:.2f}\n")
+        f.write(f"  Baseline RMSE: {item_baseline_results['rmse']:.2f}\n")
+        f.write(f"\nComparison: Clustering MAE={item_results['mae']:.2f} vs Baseline MAE={item_baseline_results['mae']:.2f}\n\n")
         
         # Task 8: Rating Count vs Accuracy
         f.write("="*60 + "\n")
         f.write("TASK 8: RATING COUNT VS PREDICTION ACCURACY\n")
         f.write("="*60 + "\n")
         for r in rating_analysis:
-            f.write(f"  {r['n_ratings']} ratings: MAE = {r['mae']:.4f}\n")
+            f.write(f"  {r['n_ratings']} ratings: MAE = {r['mae']:.2f}\n")
         f.write(f"\nPlot saved to: {os.path.join(RESULTS_DIR, 'sec3_part4_rating_count_accuracy.png')}\n")
         maes = [r['mae'] for r in rating_analysis]
         improvement = [(maes[i-1] - maes[i]) / maes[i-1] * 100 if maes[i-1] > 0 else 0 for i in range(1, len(maes))]
@@ -1710,11 +1684,11 @@ def main():
         confident = df_assign[df_assign['ratio'] < 0.5]
         ambiguous = df_assign[df_assign['ratio'] > 0.7]
         f.write(f"Total assignments: {len(df_assign)}\n")
-        f.write(f"Confident (ratio < 0.5): {len(confident)} ({len(confident)/len(df_assign)*100:.1f}%)\n")
-        f.write(f"Ambiguous (ratio > 0.7): {len(ambiguous)} ({len(ambiguous)/len(df_assign)*100:.1f}%)\n\n")
+        f.write(f"Confident (ratio < 0.5): {len(confident)} ({len(confident)/len(df_assign)*100:.2f}%)\n")
+        f.write(f"Ambiguous (ratio > 0.7): {len(ambiguous)} ({len(ambiguous)/len(df_assign)*100:.2f}%)\n\n")
         f.write("Ambiguous Assignment Examples:\n")
         for _, row in ambiguous.head(5).iterrows():
-            f.write(f"  User {int(row['user_id'])}: ratio={row['ratio']:.3f}\n")
+            f.write(f"  User {int(row['user_id'])}: ratio={row['ratio']:.2f}\n")
         f.write("\nProposed strategies for ambiguous cases:\n")
         f.write("  1. Multi-cluster membership: Assign to top-2 clusters with weighted predictions\n")
         f.write("  2. Weighted recommendations: Weight by inverse distance to each centroid\n")
@@ -1727,7 +1701,7 @@ def main():
         f.write(f"\n{'Strategy':<20} | {'MAE':<8} | {'RMSE':<8}\n")
         f.write("-"*45 + "\n")
         for s in strategy_results:
-            f.write(f"{s['strategy']:<20} | {s['mae']:<8.4f} | {s['rmse']:<8.4f}\n")
+            f.write(f"{s['strategy']:<20} | {s['mae']:<8.2f} | {s['rmse']:<8.2f}\n")
         f.write("\n")
         
         # Task 13: Cluster Granularity
@@ -1735,7 +1709,7 @@ def main():
         f.write("TASK 13: CLUSTER GRANULARITY ANALYSIS\n")
         f.write("="*60 + "\n")
         for r in granularity_results:
-            f.write(f"  K={r['k']}: MAE={r['mae']:.4f}, Avg Cluster Size~{r['avg_cluster_size']:.0f}\n")
+            f.write(f"  K={r['k']}: MAE={r['mae']:.2f}, Avg Cluster Size~{r['avg_cluster_size']:.2f}\n")
         f.write("\nDiscussion:\n")
         f.write("  - Smaller K (larger clusters): More neighbors, but less homogeneous\n")
         f.write("  - Larger K (smaller clusters): More specific, but may lack data\n")
@@ -1748,8 +1722,8 @@ def main():
         f.write("="*60 + "\n")
         f.write(f"  {'Method':<20} | {'MAE':<8} | {'RMSE':<8}\n")
         f.write("-"*45 + "\n")
-        f.write(f"  {'Clustering Only':<20} | {hybrid_results['clustering_mae']:<8.4f} | {hybrid_results['clustering_rmse']:<8.4f}\n")
-        f.write(f"  {'Hybrid (CF+Content)':<20} | {hybrid_results['hybrid_mae']:<8.4f} | {hybrid_results['hybrid_rmse']:<8.4f}\n")
+        f.write(f"  {'Clustering Only':<20} | {hybrid_results['clustering_mae']:<8.2f} | {hybrid_results['clustering_rmse']:<8.2f}\n")
+        f.write(f"  {'Hybrid (CF+Content)':<20} | {hybrid_results['hybrid_mae']:<8.2f} | {hybrid_results['hybrid_rmse']:<8.2f}\n")
         f.write(f"\n  Improvement from hybrid: {hybrid_results['improvement']:.2f}%\n")
         if hybrid_results['improvement'] > 0:
             f.write("  Conclusion: Hybrid approach IMPROVES prediction accuracy\n\n")
@@ -1761,8 +1735,8 @@ def main():
         f.write("TASK 10: COLD-START ROBUSTNESS TESTING\n")
         f.write("="*60 + "\n")
         for r in robustness_results['results']:
-            f.write(f"  {r['n_ratings']:2d} ratings: MAE = {r['mae']:.4f}, Avg predictions = {r['avg_predictions']:.0f}\n")
-        f.write(f"\n  Acceptable threshold (within 20%): {robustness_results['acceptable_threshold']:.4f}\n")
+            f.write(f"  {r['n_ratings']:2d} ratings: MAE = {r['mae']:.2f}, Avg predictions = {r['avg_predictions']:.2f}\n")
+        f.write(f"\n  Acceptable threshold (within 20%): {robustness_results['acceptable_threshold']:.2f}\n")
         if robustness_results['min_ratings_acceptable']:
             f.write(f"  Minimum ratings for acceptable quality: {robustness_results['min_ratings_acceptable']}\n")
         else:
@@ -1775,9 +1749,9 @@ def main():
         f.write("="*60 + "\n")
         f.write(f"  High-confidence predictions: {conf_results['high_conf_count']}\n")
         f.write(f"  Low-confidence predictions: {conf_results['low_conf_count']}\n")
-        f.write(f"  MAE (high-conf only): {conf_results['high_conf_mae']:.4f}\n")
-        f.write(f"  MAE (low-conf only): {conf_results['low_conf_mae']:.4f}\n")
-        f.write(f"  MAE (all): {conf_results['all_mae']:.4f}\n")
+        f.write(f"  MAE (high-conf only): {conf_results['high_conf_mae']:.2f}\n")
+        f.write(f"  MAE (low-conf only): {conf_results['low_conf_mae']:.2f}\n")
+        f.write(f"  MAE (all): {conf_results['all_mae']:.2f}\n")
         f.write(f"\n  Filtering low-confidence improves MAE by: {conf_results['improvement']:.2f}%\n")
         f.write("Key insight: Filtering low-confidence predictions can improve overall MAE.\n\n")
         
@@ -1791,9 +1765,9 @@ def main():
         f.write("  c. Agreement among similar users (rating std)\n\n")
         f.write(f"  High-confidence predictions: {conf_results_enhanced['high_conf_count']}\n")
         f.write(f"  Low-confidence predictions: {conf_results_enhanced['low_conf_count']}\n")
-        f.write(f"  MAE (high-conf only): {conf_results_enhanced['high_conf_mae']:.4f}\n")
-        f.write(f"  MAE (low-conf only): {conf_results_enhanced['low_conf_mae']:.4f}\n")
-        f.write(f"  MAE (all): {conf_results_enhanced['all_mae']:.4f}\n")
+        f.write(f"  MAE (high-conf only): {conf_results_enhanced['high_conf_mae']:.2f}\n")
+        f.write(f"  MAE (low-conf only): {conf_results_enhanced['low_conf_mae']:.2f}\n")
+        f.write(f"  MAE (all): {conf_results_enhanced['all_mae']:.2f}\n")
         f.write(f"\n  Filtering low-confidence improves MAE by: {conf_results_enhanced['improvement']:.2f}%\n\n")
         
         # Task 15: Summary

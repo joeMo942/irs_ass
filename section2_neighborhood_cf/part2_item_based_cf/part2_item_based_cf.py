@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import sys
 import os
 import numpy as np
@@ -243,7 +252,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n--- Step 7: Comparing Neighborhoods ---")
     
-    sim_comp_path = os.path.join(project_root, 'results', 'Sec2_part2_case1_similarity_comparison.txt')
+    sim_comp_path = os.path.join(project_root, 'results', 'sec2_part2_case1_similarity_comparison.txt')
     with open(sim_comp_path, 'w') as f_sim:
         for target_item in target_items:
             if target_item not in top_k_neighbors_sim: continue
@@ -276,13 +285,13 @@ def main():
                 
                 if i < len(top_sim):
                     item_s, score_s = top_sim[i]
-                    s_str = f"{item_s:<10} | {score_s:<10.4f}"
+                    s_str = f"{item_s:<10} | {score_s:<10.2f}"
                 else:
                     s_str = f"{'-':<10} | {'-':<10}"
                     
                 if i < len(top_ds):
                     item_d, score_d = top_ds[i]
-                    d_str = f"{item_d:<10} | {score_d:<10.4f}"
+                    d_str = f"{item_d:<10} | {score_d:<10.2f}"
                 else:
                     d_str = f"{'-':<10} | {'-':<10}"
                     
@@ -293,7 +302,7 @@ def main():
             print("\n")
             f_sim.write("\n\n")
             
-    print(f"  [SAVED] Sec2_part2_case1_similarity_comparison.txt")
+    print(f"  [SAVED] sec2_part2_case1_similarity_comparison.txt")
         
     # -------------------------------------------------------------------------
     # Steps 8 & 9: Compare predicted ratings from steps 3 and 6
@@ -301,7 +310,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n--- Steps 8-9: Prediction Comparison ---")
     
-    pred_comp_path = os.path.join(project_root, 'results', 'Sec2_part2_case1_prediction_comparison.txt')
+    pred_comp_path = os.path.join(project_root, 'results', 'sec2_part2_case1_prediction_comparison.txt')
     
     with open(pred_comp_path, 'w') as f_pred:
         header_title = "Comparison of Predictions (First 20 Samples):"
@@ -327,7 +336,7 @@ def main():
             print(row_str)
             f_pred.write(row_str + "\n")
             
-    print(f"  [SAVED] Sec2_part2_case1_prediction_comparison.txt")
+    print(f"  [SAVED] sec2_part2_case1_prediction_comparison.txt")
     
     # =========================================================================
     # CASE STUDY 2: PCC (Pearson Correlation Coefficient) Similarity
@@ -448,7 +457,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n--- Step 7: Comparing PCC Neighborhoods ---")
     
-    c2_sim_path = os.path.join(project_root, 'results', 'Sec2_part2_case2_similarity_comparison.txt')
+    c2_sim_path = os.path.join(project_root, 'results', 'sec2_part2_case2_similarity_comparison.txt')
     with open(c2_sim_path, 'w') as f_sim:
         f_sim.write("Case Study 2: PCC Similarity Analysis\n")
         f_sim.write("=" * 60 + "\n\n")
@@ -476,13 +485,13 @@ def main():
                 rank = i + 1
                 if i < len(top_sim):
                     item_s, score_s = top_sim[i]
-                    s_str = f"{item_s:<10} | {score_s:<10.4f}"
+                    s_str = f"{item_s:<10} | {score_s:<10.2f}"
                 else: 
                     s_str = f"{'-':<10} | {'-':<10}"
                     
                 if i < len(top_ds):
                     item_d, score_d = top_ds[i]
-                    d_str = f"{item_d:<10} | {score_d:<10.4f}"
+                    d_str = f"{item_d:<10} | {score_d:<10.2f}"
                 else: 
                     d_str = f"{'-':<10} | {'-':<10}"
                     
@@ -493,7 +502,7 @@ def main():
             print("\n")
             f_sim.write("\n\n")
         
-    print(f"  [SAVED] Sec2_part2_case2_similarity_comparison.txt")
+    print(f"  [SAVED] sec2_part2_case2_similarity_comparison.txt")
 
     # -------------------------------------------------------------------------
     # Steps 8 & 9: Compare predictions from steps 3 and 6, share insights
@@ -501,7 +510,7 @@ def main():
     # -------------------------------------------------------------------------
     print("\n--- Steps 8-9: PCC Prediction Comparison ---")
     
-    c2_pred_path = os.path.join(project_root, 'results', 'Sec2_part2_case2_prediction_comparison.txt')
+    c2_pred_path = os.path.join(project_root, 'results', 'sec2_part2_case2_prediction_comparison.txt')
     with open(c2_pred_path, 'w') as f_pred:
         f_pred.write("Case Study 2: PCC Prediction Comparison\n")
         f_pred.write("=" * 55 + "\n\n")
@@ -526,7 +535,7 @@ def main():
             f_pred.write(row + "\n")
             print(row)
             
-    print(f"  [SAVED] Sec2_part2_case2_prediction_comparison.txt")
+    print(f"  [SAVED] sec2_part2_case2_prediction_comparison.txt")
     
     # =========================================================================
     # COMPLETION

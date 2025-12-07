@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import sys
 import os
 import pandas as pd
@@ -209,8 +218,8 @@ def analyze_negative_sim_positive_cosine(target_user, target_ratings, all_users_
             c = similarity.calculate_user_raw_cosine(target_ratings, ratings)
             if c > 0.1:
                 print(f"      • User {user_id}:")
-                print(f"        {'Pearson:':<25} {p:>10.4f}")
-                print(f"        {'Cosine:':<25} {c:>10.4f}")
+                print(f"        {'Pearson:':<25} {p:>10.2f}")
+                print(f"        {'Cosine:':<25} {c:>10.2f}")
                 print(f"        {'Common items:':<25} {len(common):>10,}")
                 count += 1
                 if count >= 3: break
@@ -235,7 +244,7 @@ def analyze_rating_scales(target_user, target_ratings, neighbors, user_means):
         print(f"        {'Target mean:':<25} {target_mean:>10.2f}")
         print(f"        {'Neighbor mean:':<25} {user_means[best_ex]:>10.2f}")
         print(f"        {'Difference:':<25} {max_diff:>10.2f}")
-        print(f"        {'Similarity:':<25} {neighbor_dict[best_ex]:>10.4f}")
+        print(f"        {'Similarity:':<25} {neighbor_dict[best_ex]:>10.2f}")
     else:
         print("    No high-sim neighbor with large mean difference found.")
 
@@ -256,7 +265,7 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Neighbors found:':<35} {len(neighbors_raw):>10,}")
     print(f"    Top 5:")
     for uid, score in neighbors_raw[:5]:
-        print(f"      • User {uid}: {score:.4f}")
+        print(f"      • User {uid}: {score:.2f}")
     
     # 3: Predict Raw
     predictions_raw = predict_ratings_weighted_avg(target_user, neighbors_raw, all_users_ratings, all_items)
@@ -264,7 +273,7 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Items predicted:':<35} {len(predictions_raw):>10,}")
     print(f"    Top 5:")
     for iid, pred in predictions_raw[:5]:
-        print(f"      • Item {iid}: {pred:.4f}")
+        print(f"      • Item {iid}: {pred:.2f}")
     
     # 4: Beta
     beta = 0.30 * len(target_ratings)
@@ -284,7 +293,7 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'DS Neighbors found:':<35} {len(neighbors_ds):>10,}")
     print(f"    Top 5:")
     for uid, score in neighbors_ds[:5]:
-        print(f"      • User {uid}: {score:.4f}")
+        print(f"      • User {uid}: {score:.2f}")
     
     # 6: Predict DS
     predictions_ds = predict_ratings_weighted_avg(target_user, neighbors_ds, all_users_ratings, all_items)
@@ -292,7 +301,7 @@ def run_case_study_1(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Items predicted:':<35} {len(predictions_ds):>10,}")
     print(f"    Top 5:")
     for iid, pred in predictions_ds[:5]:
-        print(f"      • Item {iid}: {pred:.4f}")
+        print(f"      • Item {iid}: {pred:.2f}")
     
     # Comparison
     set_raw = set(u for u, s in neighbors_raw)
@@ -318,7 +327,7 @@ def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Neighbors found:':<35} {len(neighbors_pearson):>10,}")
     print(f"    Top 5:")
     for uid, score in neighbors_pearson[:5]:
-        print(f"      • User {uid}: {score:.4f}")
+        print(f"      • User {uid}: {score:.2f}")
     
     # 3: Predict Pearson
     predictions_pearson = predict_ratings_mean_centered(target_user, neighbors_pearson, all_users_ratings, user_means)
@@ -326,7 +335,7 @@ def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Items predicted:':<35} {len(predictions_pearson):>10,}")
     print(f"    Top 5:")
     for iid, pred in predictions_pearson[:5]:
-        print(f"      • Item {iid}: {pred:.4f}")
+        print(f"      • Item {iid}: {pred:.2f}")
     
     # 4: Beta
     beta = 0.30 * len(target_ratings)
@@ -346,7 +355,7 @@ def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'DS Neighbors found:':<35} {len(neighbors_ds):>10,}")
     print(f"    Top 5:")
     for uid, score in neighbors_ds[:5]:
-        print(f"      • User {uid}: {score:.4f}")
+        print(f"      • User {uid}: {score:.2f}")
     
     # 6: Predict DS
     predictions_ds = predict_ratings_mean_centered(target_user, neighbors_ds, all_users_ratings, user_means)
@@ -354,7 +363,7 @@ def run_case_study_2(target_user, target_ratings, all_users_ratings, item_users,
     print(f"    {'Items predicted:':<35} {len(predictions_ds):>10,}")
     print(f"    Top 5:")
     for iid, pred in predictions_ds[:5]:
-        print(f"      • Item {iid}: {pred:.4f}")
+        print(f"      • Item {iid}: {pred:.2f}")
 
     return all_sims_pearson
 

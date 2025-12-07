@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import pandas as pd
 import os
 

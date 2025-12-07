@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 
 def predict_mean_centered(user_id, item_id, neighbors_list, item_means_dict, user_item_ratings):
     """

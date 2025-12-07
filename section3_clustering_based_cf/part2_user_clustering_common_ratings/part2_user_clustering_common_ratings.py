@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -177,7 +186,7 @@ def main():
             score = silhouette_score(X_scaled, labels)
         
         sil_scores.append(score)
-        print(f"    • K={k:>2}: WCSS={kmeans.inertia_:>12.2f}, Silhouette={score:>8.4f}")
+        print(f"    • K={k:>2}: WCSS={kmeans.inertia_:>12.2f}, Silhouette={score:>8.2f}")
         
     # Plot Elbow & Silhouette
     fig, ax1 = plt.subplots(figsize=(10, 5))
@@ -321,7 +330,7 @@ def main():
         
         print(f"    {'Cluster candidates:':<35} {len(candidates):>10,}")
         print(f"    {'Top 20% neighbors:':<35} {len(top_neighbors):>10,}")
-        print(f"    {'Avg common items:':<35} {avg_common_top:>10.1f}")
+        print(f"    {'Avg common items:':<35} {avg_common_top:>10.2f}")
         
         # Predict
         for t_item in target_items:
@@ -342,9 +351,9 @@ def main():
             error = abs(actual - pred) if actual is not None else np.nan
             
             print(f"      • Item {t_item}:")
-            print(f"        {'Prediction:':<25} {pred:>10.4f}")
+            print(f"        {'Prediction:':<25} {pred:>10.2f}")
             print(f"        {'Actual:':<25} {str(actual) if actual else 'N/A':>10}")
-            print(f"        {'Error:':<25} {f'{error:.4f}' if not np.isnan(error) else 'N/A':>10}")
+            print(f"        {'Error:':<25} {f'{error:.2f}' if not np.isnan(error) else 'N/A':>10}")
             
             results.append({
                 'User': t_user,

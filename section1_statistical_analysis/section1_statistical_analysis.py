@@ -1,3 +1,10 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,32 +62,32 @@ print(f"  {'Invalid ratings:':<40} {num_invalid:>15,}")
 # =============================================================================
 print("\n--- Step 3: Calculating Ratings per User (n_u) ---")
 user_counts = df.groupby('user')['rating'].count().rename('n_u')
-user_counts.to_csv(os.path.join(RESULTS_DIR, 'Sec1_n_u.csv'), header=True)
-print(f"  [SAVED] Sec1_n_u.csv")
+user_counts.to_csv(os.path.join(RESULTS_DIR, 'sec1_n_u.csv'), header=True)
+print(f"  [SAVED] sec1_n_u.csv")
 
 # =============================================================================
 # 4. Calculate the number of ratings for each item (n_i) and save it.
 # =============================================================================
 print("\n--- Step 4: Calculating Ratings per Item (n_i) ---")
 item_counts = df.groupby('item')['rating'].count().rename('n_i')
-item_counts.to_csv(os.path.join(RESULTS_DIR, 'Sec1_n_i.csv'), header=True)
-print(f"  [SAVED] Sec1_n_i.csv")
+item_counts.to_csv(os.path.join(RESULTS_DIR, 'sec1_n_i.csv'), header=True)
+print(f"  [SAVED] sec1_n_i.csv")
 
 # =============================================================================
 # 5. Compute the average ratings per user (r̄_u) in your dataset and save it.
 # =============================================================================
 print("\n--- Step 5: Calculating Average Rating per User (r̄_u) ---")
 user_means = df.groupby('user')['rating'].mean().rename('r_u_bar')
-user_means.to_csv(os.path.join(RESULTS_DIR, 'Sec1_r_u.csv'), header=True)
-print(f"  [SAVED] Sec1_r_u.csv")
+user_means.to_csv(os.path.join(RESULTS_DIR, 'sec1_r_u.csv'), header=True)
+print(f"  [SAVED] sec1_r_u.csv")
 
 # =============================================================================
 # 6. Compute the average ratings per item (r̄_i) in your dataset and save it.
 # =============================================================================
 print("\n--- Step 6: Calculating Average Rating per Item (r̄_i) ---")
 item_means = df.groupby('item')['rating'].mean().rename('r_i_bar')
-item_means.to_csv(os.path.join(RESULTS_DIR, 'Sec1_r_i.csv'), header=True)
-print(f"  [SAVED] Sec1_r_i.csv")
+item_means.to_csv(os.path.join(RESULTS_DIR, 'sec1_r_i.csv'), header=True)
+print(f"  [SAVED] sec1_r_i.csv")
 
 # =============================================================================
 # 7. Ascendingly order the total number of ratings per item and plot the distribution per item.
@@ -94,9 +101,9 @@ plt.xlabel('Items (sorted by popularity)')
 plt.ylabel('Number of Ratings')
 plt.title('Distribution of Ratings per Item (Ascending)')
 plt.grid(True)
-plt.savefig(os.path.join(RESULTS_DIR, 'Sec1_long_tail_plot.png'))
+plt.savefig(os.path.join(RESULTS_DIR, 'sec1_long_tail_plot.png'))
 plt.close()
-print(f"  [PLOT] Sec1_long_tail_plot.png")
+print(f"  [PLOT] sec1_long_tail_plot.png")
 
 # =============================================================================
 # 8. Compute the number of products based on their average ratings such that:
@@ -115,8 +122,8 @@ group_counts = item_groups.value_counts().sort_index()
 print(f"  Products per group:")
 for group, count in group_counts.items():
     print(f"    • {group}: {count:,}")
-group_counts.to_csv(os.path.join(RESULTS_DIR, 'Sec1_group_counts.csv'), header=True)
-print(f"  [SAVED] Sec1_group_counts.csv")
+group_counts.to_csv(os.path.join(RESULTS_DIR, 'sec1_group_counts.csv'), header=True)
+print(f"  [SAVED] sec1_group_counts.csv")
 
 # =============================================================================
 # 9. Compute the total number of ratings in each group and order them ascendingly.
@@ -129,8 +136,8 @@ sorted_group_ratings = group_ratings.sort_values(ascending=True)
 print(f"  Total ratings per group (sorted):")
 for group, count in sorted_group_ratings.items():
     print(f"    • {group}: {count:,}")
-sorted_group_ratings.to_csv(os.path.join(RESULTS_DIR, 'Sec1_group_ratings_sorted.csv'), header=True)
-print(f"  [SAVED] Sec1_group_ratings_sorted.csv")
+sorted_group_ratings.to_csv(os.path.join(RESULTS_DIR, 'sec1_group_ratings_sorted.csv'), header=True)
+print(f"  [SAVED] sec1_group_ratings_sorted.csv")
 
 # =============================================================================
 # 10. Plot the distribution of the number of ratings in each group before and after ordering.
@@ -142,9 +149,9 @@ plt.xlabel('Groups (sorted by total ratings)')
 plt.ylabel('Total Number of Ratings')
 plt.title('Distribution of Ratings per Group (Ascending)')
 plt.grid(axis='y')
-plt.savefig(os.path.join(RESULTS_DIR, 'Sec1_ratings_per_group.png'))
+plt.savefig(os.path.join(RESULTS_DIR, 'sec1_ratings_per_group.png'))
 plt.close()
-print(f"  [PLOT] Sec1_ratings_per_group.png")
+print(f"  [PLOT] sec1_ratings_per_group.png")
 
 plt.figure(figsize=(10, 6))
 group_ratings.plot(kind='bar')
@@ -152,9 +159,9 @@ plt.xlabel('Groups (unsorted)')
 plt.ylabel('Total Number of Ratings')
 plt.title('Distribution of Ratings per Group (unsorted)')
 plt.grid(axis='y')
-plt.savefig(os.path.join(RESULTS_DIR, 'Sec1_ratings_per_group_unsorted.png'))
+plt.savefig(os.path.join(RESULTS_DIR, 'sec1_ratings_per_group_unsorted.png'))
 plt.close()
-print(f"  [PLOT] Sec1_ratings_per_group_unsorted.png")
+print(f"  [PLOT] sec1_ratings_per_group_unsorted.png")
 
 # =============================================================================
 # 11. Select three target users:
@@ -228,22 +235,22 @@ else:
 # 15. Save all intermediate results for use in later parts.
 # =============================================================================
 print("\n--- Step 15: Saving Target Users and Items ---")
-if not os.path.exists(os.path.join(RESULTS_DIR, 'Sec1_target_users.txt')):
-    with open(os.path.join(RESULTS_DIR, 'Sec1_target_users.txt'), 'w') as f:
+if not os.path.exists(os.path.join(RESULTS_DIR, 'sec1_target_users.txt')):
+    with open(os.path.join(RESULTS_DIR, 'sec1_target_users.txt'), 'w') as f:
         f.write(f"{u1}\n")
         f.write(f"{u2}\n")
         f.write(f"{u3}\n")
-    print(f"  [SAVED] Sec1_target_users.txt")
+    print(f"  [SAVED] sec1_target_users.txt")
 else:
-    print(f"  [EXISTS] Sec1_target_users.txt (skipped)")
+    print(f"  [EXISTS] sec1_target_users.txt (skipped)")
 
-if not os.path.exists(os.path.join(RESULTS_DIR, 'Sec1_target_items.txt')):
-    with open(os.path.join(RESULTS_DIR, 'Sec1_target_items.txt'), 'w') as f:
+if not os.path.exists(os.path.join(RESULTS_DIR, 'sec1_target_items.txt')):
+    with open(os.path.join(RESULTS_DIR, 'sec1_target_items.txt'), 'w') as f:
         f.write(f"{i1}\n")
         f.write(f"{i2}\n")
-    print(f"  [SAVED] Sec1_target_items.txt")
+    print(f"  [SAVED] sec1_target_items.txt")
 else:
-    print(f"  [EXISTS] Sec1_target_items.txt (skipped)")
+    print(f"  [EXISTS] sec1_target_items.txt (skipped)")
 
 # =============================================================================
 # 13. Count the number of co-rating users between each target user and other users
@@ -299,8 +306,8 @@ for i_target in target_items_list:
     print(f"    • Item {i_target}: No_coRated_items={no_corated_items:,}")
     results_13_14.append({'Type': 'Item', 'ID': i_target, 'Count': no_corated_items, 'Beta': 'N/A'})
 
-pd.DataFrame(results_13_14).to_csv(os.path.join(RESULTS_DIR, 'Sec1_results_13_14.csv'), index=False)
-print(f"\n  [SAVED] Sec1_results_13_14.csv")
+pd.DataFrame(results_13_14).to_csv(os.path.join(RESULTS_DIR, 'sec1_results_13_14.csv'), index=False)
+print(f"\n  [SAVED] sec1_results_13_14.csv")
 
 # =============================================================================
 # 16. Compare the results from point 13 & 14 and give your insights into the dataset
@@ -324,8 +331,8 @@ print(f"  {'Total Users:':<40} {n_users:>15,}")
 print(f"  {'Total Items:':<40} {n_items:>15,}")
 print(f"  {'Total Ratings:':<40} {n_ratings:>15,}")
 print(f"  {'Max Possible Ratings:':<40} {max_possible_ratings:>15,}")
-print(f"  {'Matrix Density:':<40} {density*100:>14.4f}%")
-print(f"  {'Matrix Sparsity:':<40} {sparsity*100:>14.4f}%")
+print(f"  {'Matrix Density:':<40} {density*100:>14.2f}%")
+print(f"  {'Matrix Sparsity:':<40} {sparsity*100:>14.2f}%")
 
 # --- 2. Rating Bias Analysis ---
 print("\n--- 16.2 Rating Bias Analysis ---")

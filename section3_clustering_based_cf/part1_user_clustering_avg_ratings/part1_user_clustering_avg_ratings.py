@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -65,8 +74,8 @@ def main():
     #         to ensure proper clustering, z_u = (r_u_bar - μ) / σ
     # ------------------------------------------------------------------------------------------------------------------
     print("\n--- Tasks 2-5: Feature Extraction & Normalization ---")
-    print(f"  {'Mean of users avg ratings (μ):':<40} {mu:>15.4f}")
-    print(f"  {'Standard deviation (σ):':<40} {sigma:>15.4f}")
+    print(f"  {'Mean of users avg ratings (μ):':<40} {mu:>15.2f}")
+    print(f"  {'Standard deviation (σ):':<40} {sigma:>15.2f}")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     print(f"  [DONE] Z-score normalization applied")
@@ -100,7 +109,7 @@ def main():
             score = silhouette_score(X_scaled, labels)
         silhouette_scores.append(score)
         
-        print(f"    • K={k:2d}: WCSS={kmeans.inertia_:>12.4f}, Silhouette={score:.4f}")
+        print(f"    • K={k:2d}: WCSS={kmeans.inertia_:>12.2f}, Silhouette={score:.2f}")
 
     # ------------------------------------------------------------------------------------------------------------------
     # Task 7: Analyze the clustering results for each K value
@@ -171,7 +180,7 @@ def main():
     # Task 8.2: Show the average rating value for each cluster centroid.
     # Task 8.3: Identify which clusters contain generous raters (high average) and which contain strict raters (low average).
     # ------------------------------------------------------------------------------------------------------------------
-    print(f"\n  Cluster Centroids & Interpretation (μ = {mu:.4f}):")
+    print(f"\n  Cluster Centroids & Interpretation (μ = {mu:.2f}):")
     print(f"  {'Cluster':<10} {'Avg Rating':<12} {'Nature':<10} {'Count':<10}")
     print("  " + "-"*42)
     cluster_info = []
@@ -188,7 +197,7 @@ def main():
     
     info_df = pd.DataFrame(cluster_info).sort_values(by='Avg Rating')
     for _, row in info_df.iterrows():
-        print(f"    • {int(row['Cluster']):<8} {row['Avg Rating']:<12.4f} {row['Nature']:<10} {int(row['Count']):>10,}")
+        print(f"    • {int(row['Cluster']):<8} {row['Avg Rating']:<12.2f} {row['Nature']:<10} {int(row['Count']):>10,}")
 
     # ==================================================================================================================
     # Task 9: Apply user-based collaborative filtering within each cluster (using optimal K)
@@ -272,7 +281,7 @@ def main():
         print(f"  {'Selected Top 20%:':<40} {len(top_neighbors):>15,}")
         if top_neighbors:
             print(f"  {'Top Neighbor ID:':<40} {top_neighbors[0][0]:>15}")
-            print(f"  {'Top Neighbor Similarity:':<40} {top_neighbors[0][1]:>15.4f}")
+            print(f"  {'Top Neighbor Similarity:':<40} {top_neighbors[0][1]:>15.2f}")
 
         # Predict for Target Items
         if u_id not in clustering_predictions:
@@ -282,7 +291,7 @@ def main():
         for i_id in target_items:
             prediction = predict_user_based(u_id, i_id, top_neighbors, user_item_ratings, user_means)
             clustering_predictions[u_id][i_id] = prediction
-            print(f"    • Item {i_id}: {prediction:.4f}")
+            print(f"    • Item {i_id}: {prediction:.2f}")
 
     # ==================================================================================================================
     # Baseline CF (No Clustering) - For comparison with clustering-based approach
@@ -330,7 +339,7 @@ def main():
         print(f"  {'Selected Top 20%:':<40} {len(top_neighbors):>15,}")
         if top_neighbors:
             print(f"  {'Top Neighbor ID:':<40} {top_neighbors[0][0]:>15}")
-            print(f"  {'Top Neighbor Similarity:':<40} {top_neighbors[0][1]:>15.4f}")
+            print(f"  {'Top Neighbor Similarity:':<40} {top_neighbors[0][1]:>15.2f}")
              
         if u_id not in baseline_predictions:
             baseline_predictions[u_id] = {}
@@ -339,7 +348,7 @@ def main():
         for i_id in target_items:
             prediction = predict_user_based(u_id, i_id, top_neighbors, user_item_ratings, user_means)
             baseline_predictions[u_id][i_id] = prediction
-            print(f"    • Item {i_id}: {prediction:.4f}")
+            print(f"    • Item {i_id}: {prediction:.2f}")
 
     # ==================================================================================================================
     # Task 10: Compare clustering-based predictions with non-clustering predictions from Section TWO
@@ -363,8 +372,8 @@ def main():
             p_cluster = clustering_predictions[u_id].get(i_id, 0.0)
             p_baseline = baseline_predictions[u_id].get(i_id, 0.0)
             diff = abs(p_cluster - p_baseline)
-            print(f"  {u_id:<10} {i_id:<10} {p_cluster:<12.4f} {p_baseline:<12.4f} {diff:<10.4f}")
-            comparison_lines.append(f"{u_id},{i_id},{p_cluster:.4f},{p_baseline:.4f},{diff:.4f}")
+            print(f"  {u_id:<10} {i_id:<10} {p_cluster:<12.2f} {p_baseline:<12.2f} {diff:<10.2f}")
+            comparison_lines.append(f"{u_id},{i_id},{p_cluster:.2f},{p_baseline:.2f},{diff:.2f}")
 
     # Save comparison to file
     comparison_file_path = os.path.join(results_dir, 'sec3_part1_comparison_results.txt')
@@ -455,7 +464,7 @@ def main():
             'Inertia': inertia,
             'Cluster Size Std': std_dev
         })
-        print(f"  {seed:<10} {inertia:<15.4f} {std_dev:<15.2f}")
+        print(f"  {seed:<10} {inertia:<15.2f} {std_dev:<15.2f}")
 
     res_df = pd.DataFrame(robustness_results)
     inertia_std = res_df['Inertia'].std()
@@ -506,9 +515,9 @@ def main():
     analysis_lines.append("14.1. EFFECTIVENESS OF CLUSTERING BASED ON AVERAGE USER RATINGS")
     analysis_lines.append("-"*80)
     analysis_lines.append(f"- Number of clusters (Optimal K): {optimal_k}")
-    analysis_lines.append(f"- Global mean of average ratings (mu): {mu:.4f}")
-    analysis_lines.append(f"- Standard deviation of average ratings (sigma): {sigma:.4f}")
-    analysis_lines.append(f"- Best Silhouette Score achieved: {max(silhouette_scores):.4f} at K={k_values[silhouette_scores.index(max(silhouette_scores))]}")
+    analysis_lines.append(f"- Global mean of average ratings (mu): {mu:.2f}")
+    analysis_lines.append(f"- Standard deviation of average ratings (sigma): {sigma:.2f}")
+    analysis_lines.append(f"- Best Silhouette Score achieved: {max(silhouette_scores):.2f} at K={k_values[silhouette_scores.index(max(silhouette_scores))]}")
 
     
     # 14.2 Trade-off between prediction accuracy and computational efficiency
@@ -519,8 +528,8 @@ def main():
     analysis_lines.append(f"- Similarity computations (Clustering): {comps_with_clustering:,}")
     analysis_lines.append(f"- Speedup Factor: {speedup:.2f}x")
     analysis_lines.append(f"- Efficiency Gain: {percent_reduction:.2f}%")
-    analysis_lines.append(f"- Average Prediction Difference: {avg_prediction_diff:.4f}")
-    analysis_lines.append(f"- Maximum Prediction Difference: {max_prediction_diff:.4f}")
+    analysis_lines.append(f"- Average Prediction Difference: {avg_prediction_diff:.2f}")
+    analysis_lines.append(f"- Maximum Prediction Difference: {max_prediction_diff:.2f}")
     analysis_lines.append("")
 
 
@@ -542,7 +551,7 @@ def main():
     analysis_lines.append("K Value Analysis:")
     for i, k in enumerate(k_values):
         avg_cluster_size = total_users_N / k
-        analysis_lines.append(f"  K={k:2d}: WCSS={wcss[i]:,.2f}, Silhouette={silhouette_scores[i]:.4f}, Avg Cluster Size={avg_cluster_size:.0f}")
+        analysis_lines.append(f"  K={k:2d}: WCSS={wcss[i]:,.2f}, Silhouette={silhouette_scores[i]:.2f}, Avg Cluster Size={avg_cluster_size:.2f}")
 
     
     # Robustness summary
@@ -551,7 +560,7 @@ def main():
     analysis_lines.append("-"*80)
     is_stable = inertia_std < res_df['Inertia'].mean() * 0.05
     analysis_lines.append(f"- Clustering Stability: {'STABLE' if is_stable else 'VARIABLE'}")
-    analysis_lines.append(f"- Inertia Standard Deviation across runs: {inertia_std:.4f}")
+    analysis_lines.append(f"- Inertia Standard Deviation across runs: {inertia_std:.2f}")
     if is_stable:
         analysis_lines.append("- The K-means clustering produces consistent results across different initializations.")
     else:

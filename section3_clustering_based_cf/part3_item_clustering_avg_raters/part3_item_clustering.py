@@ -1,3 +1,12 @@
+# Youssef Zakaria Soubhi Abo Srewa
+# 221101030
+# noureldeen maher Mesbah
+# 221101140
+# Youssef Mohamed
+# 221101573
+
+import warnings
+warnings.filterwarnings("ignore")
 import os
 import sys
 
@@ -106,7 +115,7 @@ def main():
             score = silhouette_score(X_scaled, labels)
             
         silhouette_scores.append(score)
-        print(f"  K={k:<5} {'WCSS:':<8} {kmeans.inertia_:>12.2f}  {'Silhouette:':<12} {score:>8.4f}")
+        print(f"  K={k:<5} {'WCSS:':<8} {kmeans.inertia_:>12.2f}  {'Silhouette:':<12} {score:>8.2f}")
 
     # =========================================================
     # TASK 4: DETERMINE THE OPTIMAL K VALUE
@@ -158,7 +167,7 @@ def main():
     
     print("  Cluster Statistics (Sorted by Avg Raters):")
     for _, row in cluster_stats.iterrows():
-        print(f"    • Cluster {int(row['cluster'])}: Avg Raters = {row['mean']:,.1f}, Items = {int(row['count']):,}")
+        print(f"    • Cluster {int(row['cluster'])}: Avg Raters = {row['mean']:,.2f}, Items = {int(row['count']):,}")
     
     # =========================================================
     # TASK 6: ANALYZE CLUSTER MEMBERSHIP AND ITEM POPULARITY
@@ -361,8 +370,8 @@ def main():
     avg_mae_clus = np.mean(mae_clus_list) if mae_clus_list else 0
     
     print("\n  " + "-"*68)
-    print(f"  {'MAE (Baseline - Global):':<40} {avg_mae_base:>15.4f}")
-    print(f"  {'MAE (Clustering - Local):':<40} {avg_mae_clus:>15.4f}")
+    print(f"  {'MAE (Baseline - Global):':<40} {avg_mae_base:>15.2f}")
+    print(f"  {'MAE (Clustering - Local):':<40} {avg_mae_clus:>15.2f}")
     
     if avg_mae_clus < avg_mae_base:
         print("\n  > CONCLUSION: Clustering-based approach produces more reliable predictions.")
@@ -466,10 +475,10 @@ def main():
     avg_tail_cand_clus = np.mean(tail_candidates_clus) if tail_candidates_clus else 0
     
     print(f"  {'Tail items evaluated:':<40} {len(tail_errors_base):>15}")
-    print(f"  {'Avg Error (Baseline):':<40} {avg_tail_err_base:>15.4f}")
-    print(f"  {'Avg Error (Clustering):':<40} {avg_tail_err_clus:>15.4f}")
-    print(f"  {'Avg Candidates (Baseline):':<40} {avg_tail_cand_base:>15.1f}")
-    print(f"  {'Avg Candidates (Clustering):':<40} {avg_tail_cand_clus:>15.1f}")
+    print(f"  {'Avg Error (Baseline):':<40} {avg_tail_err_base:>15.2f}")
+    print(f"  {'Avg Error (Clustering):':<40} {avg_tail_err_clus:>15.2f}")
+    print(f"  {'Avg Candidates (Baseline):':<40} {avg_tail_cand_base:>15.2f}")
+    print(f"  {'Avg Candidates (Clustering):':<40} {avg_tail_cand_clus:>15.2f}")
     
     if avg_tail_err_clus < avg_tail_err_base:
         print("\n  > Insight: Clustering improves reliability for long-tail items.")
@@ -525,11 +534,11 @@ def main():
     print(f"\n  {'Cluster':<10} {'Size':>10} {'Avg Error':>12}")
     print("  " + "-"*34)
     for _, row in df_c_stats.iterrows():
-        print(f"  {int(row['cluster']):<10} {int(row['size']):>10} {row['avg_error']:>12.4f}")
+        print(f"  {int(row['cluster']):<10} {int(row['size']):>10} {row['avg_error']:>12.2f}")
     
     # Correlation
     corr = df_c_stats['size'].corr(df_c_stats['avg_error'])
-    print(f"\n  {'Correlation (Size vs Error):':<40} {corr:>15.4f}")
+    print(f"\n  {'Correlation (Size vs Error):':<40} {corr:>15.2f}")
     if corr < -0.3:
         print("  > Trend: Larger clusters tend to have LOWER error (Better).")
     elif corr > 0.3:
